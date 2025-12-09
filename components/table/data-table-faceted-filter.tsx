@@ -1,0 +1,155 @@
+"use client";
+
+import { Column } from "@tanstack/react-table";
+import { Check, PlusCircle } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { Option } from "@/types/data-table";
+
+interface DataTableFacetedFilterProps<TData, TValue> {
+  column?: Column<TData, TValue>;
+  title?: string;
+  options: Option[];
+  onValueChange?: (value: string[] | undefined) => void;
+}
+
+export function DataTableFacetedFilter<TData, TValue>({
+  column,
+  title,
+  options,
+  onValueChange,
+}: DataTableFacetedFilterProps<TData, TValue>) {
+  const columnFilterValue = column?.getFilterValue();
+  const selectedValues = new Set(columnFilterValue as string[]);
+
+  const handleValueChange = (value: string[] | undefined) => {
+    column?.setFilterValue(value);
+
+    if (onValueChange) {
+      onValueChange(value ?? undefined);
+    }
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 border-dashed">
+          <PlusCircle />
+          {title}
+          {selectedValues?.size > 0 && (
+            <>
+              <Separator orientation="vertical" className="mx-2 h-4" />
+              <Badge
+                variant="secondary"
+                className="rounded-sm px-1 font-normal lg:hidden"
+              >
+                {selectedValues.size}
+              </Badge>
+              <div className="hidden gap-1 lg:flex">
+                {selectedValues.size > 2 ? (
+                  <Badge
+                    variant="secondary"
+                    className="rounded-sm px-1 font-normal"
+                  >
+                    {selectedValues.size} selected
+                  </Badge>
+                ) : (
+                  options
+                    .filter((option) =>
+                      selectedValues.has(String(option.value))
+                    )
+                    .map((option) => (
+                      <Badge
+                        variant="secondary"
+                        key={String(option.value)}
+                        className="rounded-sm px-1 font-normal"
+                      >
+                        {option.label}
+                      </Badge>
+                    ))
+                )}
+              </div>
+            </>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={title} />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const stringValue = String(option.value);
+                const isSelected = selectedValues.has(stringValue);
+                return (
+                  <CommandItem
+                    key={String(option.value)}
+                    onSelect={() => {
+                      if (isSelected) {
+                        selectedValues.delete(stringValue);
+                      } else {
+                        selectedValues.add(stringValue);
+                      }
+                      const filterValues = Array.from(selectedValues);
+                      const value = filterValues.length
+                        ? filterValues
+                        : undefined;
+
+                      handleValueChange(value);
+                    }}
+                  >
+                    <div
+                      className={cn(
+                        "flex size-4 items-center justify-center rounded-lg border",
+                        isSelected
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-input [&_svg]:invisible"
+                      )}
+                    >
+                      <Check className="text-primary-foreground size-3.5" />
+                    </div>
+                    {option.icon && (
+                      <option.icon className="text-muted-foreground size-4" />
+                    )}
+                    <span>{option.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            {selectedValues.size > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => handleValueChange(undefined)}
+                    className="justify-center text-center"
+                  >
+                    Clear filters
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
