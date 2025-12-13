@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { categoryColumns } from "./_components/columns";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
@@ -9,16 +9,7 @@ import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -64,82 +55,18 @@ export default function Categories() {
         const cat = row.original;
         return (
           <div className="flex items-center justify-end h-full">
-            <Dialog
-              open={addDialogOpen && selectedCategory?.name === cat.name}
-              onOpenChange={setAddDialogOpen}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setSelectedCategory(cat);
+                setSelectedContent([]);
+                setSearch("");
+                setAddDialogOpen(true);
+              }}
             >
-              <DialogTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setSelectedContent([]);
-                    setAddDialogOpen(true);
-                  }}
-                >
-                  Add Content
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl w-full">
-                <DialogHeader>
-                  <DialogTitle>Add Content to {cat.name}</DialogTitle>
-                </DialogHeader>
-                <Input
-                  placeholder="Search content..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <div className="max-h-48 overflow-y-auto mb-4">
-                  {mockContent
-                    .filter((c) =>
-                      c.name.toLowerCase().includes(search.toLowerCase())
-                    )
-                    .map((content) => (
-                      <label
-                        key={content.id}
-                        className="flex items-center gap-2 py-1 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedContent.includes(content.id)}
-                          onChange={(e) => {
-                            setSelectedContent((prev) =>
-                              e.target.checked
-                                ? [...prev, content.id]
-                                : prev.filter((id) => id !== content.id)
-                            );
-                          }}
-                        />
-                        <span>{content.name}</span>
-                      </label>
-                    ))}
-                </div>
-                <DialogFooter>
-                  <Button
-                    onClick={() => {
-                      if (!cat) return;
-                      setCategories((prev) =>
-                        prev.map((category) =>
-                          category.name === cat.name
-                            ? {
-                                ...category,
-                                items:
-                                  (category.items || 0) +
-                                  selectedContent.length,
-                              }
-                            : category
-                        )
-                      );
-                      setAddDialogOpen(false);
-                    }}
-                    disabled={selectedContent.length === 0}
-                  >
-                    Add Selected
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              Add Content
+            </Button>
           </div>
         );
       },
@@ -176,6 +103,74 @@ export default function Categories() {
           </div>
         </div>
       </PageWrapper>
+
+      <Dialog
+        open={addDialogOpen}
+        onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (!open) {
+            setSelectedContent([]);
+            setSearch("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl w-full">
+          <DialogHeader>
+            <DialogTitle>Add Content to {selectedCategory?.name}</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Search content..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="max-h-48 overflow-y-auto mb-4">
+            {mockContent
+              .filter((c) =>
+                c.name.toLowerCase().includes(search.toLowerCase())
+              )
+              .map((content) => (
+                <label
+                  key={content.id}
+                  className="flex items-center gap-2 py-1 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedContent.includes(content.id)}
+                    onChange={(e) => {
+                      setSelectedContent((prev) =>
+                        e.target.checked
+                          ? [...prev, content.id]
+                          : prev.filter((id) => id !== content.id)
+                      );
+                    }}
+                  />
+                  <span>{content.name}</span>
+                </label>
+              ))}
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (!selectedCategory) return;
+                setCategories((prev) =>
+                  prev.map((category) =>
+                    category.name === selectedCategory.name
+                      ? {
+                          ...category,
+                          items: (category.items || 0) + selectedContent.length,
+                        }
+                      : category
+                  )
+                );
+                setAddDialogOpen(false);
+              }}
+              disabled={selectedContent.length === 0}
+            >
+              Add Selected
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

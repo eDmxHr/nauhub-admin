@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 import {
   Select,
   SelectTrigger,
@@ -9,18 +10,21 @@ import {
 } from "../../components/ui/select";
 import { parentalRatings } from "../../data/parental-ratings";
 import { qualities } from "../../data/qualities";
+import { genres } from "../../data/genres";
 import FormSheet from "../form-sheet";
 import { Label } from "../ui/label";
+import { Badge } from "../ui/badge";
 
 export interface MovieGeneralInfoFormValues {
   name: string;
   description: string;
   release_year: number;
   parental_rating: string;
-  is_original: boolean;
   duration_minutes: number;
   quality: string;
-  genre: string;
+  genres: string[];
+  magnet_url: string;
+  poster_file?: File;
 }
 
 interface MovieGeneralInfoProps {
@@ -48,13 +52,27 @@ export default function MovieGeneralInfo({
       description: "",
       release_year: new Date().getFullYear(),
       parental_rating: "PG-13",
-      is_original: false,
       duration_minutes: 90,
       quality: "",
-      genre: "",
+      genres: [],
+      magnet_url: "",
       ...defaultValues,
     },
   });
+
+  const selectedGenres = watch("genres") || [];
+
+  const toggleGenre = (genreValue: string) => {
+    const currentGenres = selectedGenres;
+    if (currentGenres.includes(genreValue)) {
+      setValue(
+        "genres",
+        currentGenres.filter((g) => g !== genreValue)
+      );
+    } else {
+      setValue("genres", [...currentGenres, genreValue]);
+    }
+  };
 
   const submitHandler =
     onSubmit ||
@@ -67,33 +85,35 @@ export default function MovieGeneralInfo({
     <FormSheet
       open={open}
       onOpenChange={onOpenChange}
-      title="Movie General Info"
-      description="Add general information about the movie."
+      title="Movie Information"
+      description="Add movie details, torrent magnet link, and poster."
       onSubmit={handleSubmit(submitHandler)}
       isLoading={isSubmitting}
-      submitButtonText="Save Info"
+      submitButtonText="Save Movie"
     >
       <div className="flex flex-col gap-y-6 mt-4">
-        {/* Movie Name and Description outside grid */}
+        {/* Basic Information */}
         <div className="flex flex-col gap-y-2">
           <Label htmlFor="name">Movie Name</Label>
           <Input
             id="name"
             {...register("name", { required: true })}
-            placeholder="Movie name"
+            placeholder="Enter movie name"
           />
         </div>
+
         <div className="flex flex-col gap-y-2">
           <Label htmlFor="description">Description</Label>
-          <Input
+          <Textarea
             id="description"
             {...register("description", { required: true })}
-            placeholder="Description"
+            placeholder="Enter movie description"
+            rows={4}
           />
         </div>
-        {/* Remaining fields in grid */}
+
+        {/* Movie Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Release Year */}
           <div className="flex flex-col gap-y-2">
             <Label htmlFor="release_year">Release Year</Label>
             <Input
@@ -104,33 +124,33 @@ export default function MovieGeneralInfo({
                 min: 1900,
                 max: 2100,
               })}
-              placeholder="Year"
+              placeholder="2024"
             />
           </div>
-          {/* Genre */}
-          <div className="flex flex-col gap-y-2">
-            <Label htmlFor="genre">Genre</Label>
-            <Select
-              value={watch("genre")}
-              onValueChange={(val) => setValue("genre", val)}
-            >
-              <SelectTrigger id="genre">
-                <SelectValue placeholder="Genre" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
-                <SelectItem value="Thriller">Thriller</SelectItem>
-                <SelectItem value="Drama">Drama</SelectItem>
-                <SelectItem value="Comedy">Comedy</SelectItem>
-                <SelectItem value="Action">Action</SelectItem>
-                <SelectItem value="Documentary">Documentary</SelectItem>
-                <SelectItem value="Romance">Romance</SelectItem>
-                <SelectItem value="Horror">Horror</SelectItem>
-                <SelectItem value="Animation">Animation</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="flex flex-col gap-y-2 md:col-span-2">
+            <Label>Genres (select multiple)</Label>
+            <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[42px]">
+              {genres.map((genre) => (
+                <Badge
+                  key={genre.value}
+                  variant={
+                    selectedGenres.includes(genre.value) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() => toggleGenre(genre.value)}
+                >
+                  {genre.label}
+                </Badge>
+              ))}
+            </div>
+            {selectedGenres.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No genres selected
+              </p>
+            )}
           </div>
-          {/* Parental Rating */}
+
           <div className="flex flex-col gap-y-2">
             <Label htmlFor="parental_rating">Parental Rating</Label>
             <Select
@@ -138,7 +158,7 @@ export default function MovieGeneralInfo({
               onValueChange={(val) => setValue("parental_rating", val)}
             >
               <SelectTrigger id="parental_rating">
-                <SelectValue placeholder="Parental Rating" />
+                <SelectValue placeholder="Select rating" />
               </SelectTrigger>
               <SelectContent>
                 {parentalRatings.map((rating) => (
@@ -149,25 +169,25 @@ export default function MovieGeneralInfo({
               </SelectContent>
             </Select>
           </div>
-          {/* Duration */}
+
           <div className="flex flex-col gap-y-2">
-            <Label htmlFor="duration_minutes">Duration (min)</Label>
+            <Label htmlFor="duration_minutes">Duration (minutes)</Label>
             <Input
               id="duration_minutes"
               type="number"
               {...register("duration_minutes", { required: true, min: 1 })}
-              placeholder="Duration (min)"
+              placeholder="120"
             />
           </div>
-          {/* Quality & Resolution */}
-          <div className="flex flex-col gap-y-2">
+
+          <div className="flex flex-col gap-y-2 md:col-span-2">
             <Label htmlFor="quality">Quality & Resolution</Label>
             <Select
               value={watch("quality")}
               onValueChange={(val) => setValue("quality", val)}
             >
               <SelectTrigger id="quality">
-                <SelectValue placeholder="Quality & Resolution" />
+                <SelectValue placeholder="Select quality" />
               </SelectTrigger>
               <SelectContent>
                 {qualities.map((q) =>
@@ -180,6 +200,26 @@ export default function MovieGeneralInfo({
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Media Files */}
+        <div className="flex flex-col gap-y-2">
+          <Label htmlFor="magnet_url">Magnet URL or Info Hash</Label>
+          <Input
+            id="magnet_url"
+            {...register("magnet_url", { required: true })}
+            placeholder="magnet:?xt=urn:btih:... or info hash"
+          />
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label htmlFor="poster_file">Poster Image</Label>
+          <Input
+            id="poster_file"
+            type="file"
+            accept="image/*"
+            {...register("poster_file")}
+          />
         </div>
       </div>
     </FormSheet>
