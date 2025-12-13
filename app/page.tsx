@@ -331,7 +331,10 @@ export default function DashboardPage() {
             </span>
             <ul className="mt-2 space-y-1">
               {leastWatched.map((v) => (
-                <li key={v.title} className="flex justify-between">
+                <li
+                  key={v.title}
+                  className="flex justify-between items-center gap-x-10"
+                >
                   <span>{v.title}</span>
                   <span className="text-xs text-muted-foreground">
                     {v.views.toLocaleString()} views

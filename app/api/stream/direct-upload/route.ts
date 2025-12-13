@@ -44,10 +44,6 @@ export async function POST() {
       console.error("Cloudflare API error:");
       console.error("Status:", response.status);
       console.error("Response:", errorText);
-      console.error(
-        "Request URL:",
-        `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/stream/direct_upload`
-      );
 
       return NextResponse.json(
         {

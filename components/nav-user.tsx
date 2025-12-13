@@ -89,7 +89,7 @@ export function NavUser() {
             </DropdownMenuItem>
 
             <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
-              <LogOut />
+              <LogOut className="text-red-600" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
