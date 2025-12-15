@@ -9,7 +9,6 @@ import {
   SelectItem,
 } from "../../components/ui/select";
 import { parentalRatings } from "../../data/parental-ratings";
-import { qualities } from "../../data/qualities";
 import { genres } from "../../data/genres";
 import FormSheet from "../form-sheet";
 import { Label } from "../ui/label";
@@ -21,10 +20,7 @@ export interface MovieGeneralInfoFormValues {
   release_year: number;
   parental_rating: string;
   duration_minutes: number;
-  quality: string;
   genres: string[];
-  magnet_url: string;
-  poster_file?: File;
 }
 
 interface MovieGeneralInfoProps {
@@ -53,9 +49,7 @@ export default function MovieGeneralInfo({
       release_year: new Date().getFullYear(),
       parental_rating: "PG-13",
       duration_minutes: 90,
-      quality: "",
       genres: [],
-      magnet_url: "",
       ...defaultValues,
     },
   });
@@ -179,47 +173,6 @@ export default function MovieGeneralInfo({
               placeholder="120"
             />
           </div>
-
-          <div className="flex flex-col gap-y-2 md:col-span-2">
-            <Label htmlFor="quality">Quality & Resolution</Label>
-            <Select
-              value={watch("quality")}
-              onValueChange={(val) => setValue("quality", val)}
-            >
-              <SelectTrigger id="quality">
-                <SelectValue placeholder="Select quality" />
-              </SelectTrigger>
-              <SelectContent>
-                {qualities.map((q) =>
-                  q.resolutions.map((res) => (
-                    <SelectItem key={q.id + res} value={`${q.name} ${res}`}>
-                      {`${q.name} ${res}`}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Media Files */}
-        <div className="flex flex-col gap-y-2">
-          <Label htmlFor="magnet_url">Magnet URL or Info Hash</Label>
-          <Input
-            id="magnet_url"
-            {...register("magnet_url", { required: true })}
-            placeholder="magnet:?xt=urn:btih:... or info hash"
-          />
-        </div>
-
-        <div className="flex flex-col gap-y-2">
-          <Label htmlFor="poster_file">Poster Image</Label>
-          <Input
-            id="poster_file"
-            type="file"
-            accept="image/*"
-            {...register("poster_file")}
-          />
         </div>
       </div>
     </FormSheet>

@@ -16,6 +16,7 @@ export interface AnimeGeneralInfoFormValues {
   release_year: number;
   age_rating: string;
   is_original: boolean;
+  poster_file?: File;
 }
 
 interface AnimeGeneralInfoProps {
@@ -44,6 +45,7 @@ export default function AnimeGeneralInfo({
       release_year: new Date().getFullYear(),
       age_rating: "PG",
       is_original: false,
+      poster_file: undefined,
       ...defaultValues,
     },
   });
@@ -79,6 +81,15 @@ export default function AnimeGeneralInfo({
             id="description"
             {...register("description", { required: true })}
             placeholder="Description"
+          />
+        </div>
+        <div className="flex flex-col gap-y-2">
+          <Label htmlFor="poster_file">Poster Image</Label>
+          <Input
+            id="poster_file"
+            type="file"
+            accept="image/*"
+            {...register("poster_file")}
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

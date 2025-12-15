@@ -3,10 +3,12 @@ import { Input } from "../../components/ui/input";
 import { StreamUploader } from "../../components/stream-uploader";
 import FormSheet from "../form-sheet";
 import { Label } from "../ui/label";
+import { qualities } from "@/data/qualities";
 
 export interface MovieMediaUploadFormValues {
-  poster_url: string;
-  movie_file?: any; // Will be handled by StreamUploader
+  quality: string;
+  magnet_url: string;
+  poster_file?: File;
 }
 
 interface MovieMediaUploadProps {
@@ -23,14 +25,14 @@ export default function MovieMediaUpload({
   defaultValues,
 }: MovieMediaUploadProps) {
   const {
-    control,
     handleSubmit,
     register,
     formState: { errors, isSubmitting },
   } = useForm<MovieMediaUploadFormValues>({
     defaultValues: {
-      poster_url: "",
-      movie_file: undefined,
+      quality: "",
+      magnet_url: "",
+      poster_file: undefined,
       ...defaultValues,
     },
   });
@@ -54,25 +56,40 @@ export default function MovieMediaUpload({
     >
       <div className="grid grid-cols-1 gap-6 mt-4">
         <div className="flex flex-col gap-y-2">
-          <Label htmlFor="poster_url">Poster URL</Label>
+          <Label htmlFor="quality">Quality & Resolution</Label>
+          <select
+            id="quality"
+            {...register("quality", { required: true })}
+            className="border rounded-md p-2"
+          >
+            <option value="">Select quality</option>
+            {qualities.map((q: any) =>
+              q.resolutions.map((res: string) => (
+                <option
+                  key={q.id + res}
+                  value={`${q.name} ${res}`}
+                >{`${q.name} ${res}`}</option>
+              ))
+            )}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label htmlFor="magnet_url">Magnet URL or Info Hash</Label>
           <Input
-            id="poster_url"
-            {...register("poster_url")}
-            placeholder="Poster URL"
+            id="magnet_url"
+            {...register("magnet_url", { required: true })}
+            placeholder="magnet:?xt=urn:btih:... or info hash"
           />
         </div>
 
         <div className="flex flex-col gap-y-2">
-          <Label htmlFor="movie_file">Movie File</Label>
-          <Controller
-            control={control}
-            name="movie_file"
-            render={({ field }) => (
-              <StreamUploader
-                onUploadComplete={(file) => field.onChange(file)}
-                onUploadError={() => field.onChange(undefined)}
-              />
-            )}
+          <Label htmlFor="poster_file">Poster Image</Label>
+          <Input
+            id="poster_file"
+            type="file"
+            accept="image/*"
+            {...register("poster_file")}
           />
         </div>
       </div>

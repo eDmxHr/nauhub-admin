@@ -10,6 +10,7 @@ import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import SeriesMediaUpload from "@/components/forms/series-media-upload";
 import Image from "next/image";
+import { truncate } from "@/lib/utils";
 
 export default function SeriesDetailPage() {
   const [activeSeason, setActiveSeason] = useState(1);
@@ -18,8 +19,7 @@ export default function SeriesDetailPage() {
   const currentSeasonData = seasons.find((s) => s.number === activeSeason);
 
   // PageHeader and PageWrapper integration
-  const truncate = (str: string, n: number) =>
-    str.length > n ? str.slice(0, n).trimEnd() + "..." : str;
+
   const seriesTitle = "The Last Eclipse";
   const fullDescription =
     "When the world's brightest minds discover an anomaly in Earth's orbit, humanity faces an unprecedented crisis. Dr. Sarah Chen, a renowned astrophysicist, must race against time to uncover the truth behind the approaching darkness. As governments collapse and society fractures, she leads a desperate mission to save civilization from total extinction. But the greatest threat may not come from the cosmos—it may already be among us.";

@@ -10,6 +10,7 @@ import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import AnimeMediaUpload from "@/components/forms/anime-media-upload";
 import Image from "next/image";
+import { truncate } from "@/lib/utils";
 
 export default function AnimeDetailPage() {
   const [activeTitleId, setActiveTitleId] = useState("201");
@@ -18,8 +19,6 @@ export default function AnimeDetailPage() {
   const anime = mockAnime.find((a) => a.title_id === activeTitleId);
   if (!anime) return <div>Anime not found</div>;
 
-  const truncate = (str: string, n: number) =>
-    str.length > n ? str.slice(0, n).trimEnd() + "..." : str;
   const animeTitle = anime.name;
   const animeDescription = truncate(anime.description, 50);
   const breadcrumbs = [
