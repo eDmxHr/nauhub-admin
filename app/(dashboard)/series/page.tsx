@@ -7,7 +7,6 @@ import {
   getSortedRowModel,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { mockTitles } from "../../data/titles";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/page-header";
@@ -18,8 +17,8 @@ import { DataTableFilters } from "@/components/table/data-table-filters";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import BulkActions from "@/components/table/bulk-actions";
 import { TableSkeletonRows } from "@/components/table/table-skeleton-rows";
-import { PlusIcon } from "lucide-react";
 import SeriesGeneralInfo from "@/components/forms/series-general-info";
+import { mockTitles } from "@/data/titles";
 
 export default function Page() {
   // Only use titles of type 'Series'

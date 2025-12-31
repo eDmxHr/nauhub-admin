@@ -25,6 +25,7 @@ export interface FormSheetProps {
   submitButtonText?: string;
   closeButtonText?: string;
   customFooter?: ReactNode;
+  className?: string;
 }
 
 export default function FormSheet({
@@ -40,6 +41,7 @@ export default function FormSheet({
   customFooter,
   isLoading = false,
   disabled = false,
+  className,
 }: FormSheetProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +52,7 @@ export default function FormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
 
-      <SheetContent>
+      <SheetContent className={className}>
         <form className="flex h-full w-full flex-col" onSubmit={handleSubmit}>
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>

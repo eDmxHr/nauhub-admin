@@ -4,15 +4,12 @@ import * as React from "react";
 import {
   LayoutDashboard,
   CreditCard,
-  UsersIcon,
-  Settings2Icon,
   DollarSignIcon,
   VideoIcon,
   FilmIcon,
   Users2,
   TicketIcon,
   BellIcon,
-  HardDrive,
   ShieldIcon,
   Settings2,
   OrigamiIcon,
@@ -20,21 +17,14 @@ import {
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import SidebarNavGroup from "@/components/ui/sidebar-group";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 
 // Navigation groups with better organization and visual hierarchy
 const navigationGroups = {

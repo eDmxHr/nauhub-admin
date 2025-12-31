@@ -66,13 +66,56 @@ export type Episode = {
 
 // Genres & Relations
 export type Genre = {
-  genre_id: string;
-  genre_name: string;
+  id: string | number;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type TitleGenre = {
   title_id: string;
   genre_id: string;
+};
+
+// Categories
+export type Category = {
+  id: string | number;
+  name: string;
+  slug: string;
+  description?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// Videos (Movies, Series, Anime)
+export type Video = {
+  id: string | number;
+  type: "movie" | "series" | "anime";
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  banner?: string;
+  magnet_url?: string;
+  release_year?: number;
+  duration?: number;
+  age_rating?: string;
+  imdb_rating?: number;
+  is_published: boolean;
+  is_featured: boolean;
+  is_trending: boolean;
+  category_ids?: number[];
+  genre_ids?: number[];
+  categories?: Category[];
+  genres?: Genre[];
+  created_at?: string;
+  updated_at?: string;
 };
 
 // People & Credits

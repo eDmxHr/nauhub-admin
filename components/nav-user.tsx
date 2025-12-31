@@ -7,6 +7,7 @@ import {
   SunIcon,
   UserIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -24,14 +25,28 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { useUserStore } from "@/stores/user-store";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
+  const router = useRouter();
+  const { user, logout } = useUserStore();
 
-  const user = {
-    avatar: "/avatars/avatar-1.png",
-    name: "Charlie Nguyen",
-    email: "admin@balaafi.com",
+  const handleLogout = async () => {
+    await logout();
+
+    router.push("/login");
+  };
+
+  // Get user initials for avatar fallback
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -45,7 +60,9 @@ export function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {getInitials(user?.name)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
@@ -68,7 +85,9 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(user?.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
@@ -88,7 +107,10 @@ export function NavUser() {
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+            >
               <LogOut className="text-red-600" />
               Log out
             </DropdownMenuItem>
