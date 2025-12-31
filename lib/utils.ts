@@ -29,3 +29,14 @@ export function extractDateTime(isoString: string): {
 
 export const truncate = (str: string, n: number) =>
   str.length > n ? str.slice(0, n).trimEnd() + "..." : str;
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+
+  // Format as "DD MMM YYYY" (e.g., "15 Jan 2024")
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
+}

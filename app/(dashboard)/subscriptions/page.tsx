@@ -1,44 +1,14 @@
+"use client";
+
 import PageWrapper from "@/components/page-wrapper";
 import PageHeader from "@/components/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  InvoicesPaymentsTable,
-  InvoicePayment,
-} from "./_components/invoices-payments-table";
+import { InvoicesPaymentsTable } from "./_components/invoices-payments-table";
 import {
   SubscriptionPlans,
   SubscriptionPlan,
 } from "./_components/subscription-plans";
-
-const invoicesPayments: InvoicePayment[] = [
-  {
-    id: "INV-1001",
-    user: { name: "Alice Smith", email: "alice@example.com" },
-    plan: "Premium",
-    amount: "$19.99",
-    status: "paid",
-    date: "2025-12-01",
-    slipUrl: "/slips/inv-1001.pdf",
-  },
-  {
-    id: "INV-1002",
-    user: { name: "Bob Lee", email: "bob@example.com" },
-    plan: "Free",
-    amount: "$0.00",
-    status: "pending",
-    date: "2025-12-03",
-    slipUrl: "/slips/inv-1002.pdf",
-  },
-  {
-    id: "INV-1003",
-    user: { name: "Charlie Kim", email: "charlie@example.com" },
-    plan: "Premium",
-    amount: "$19.99",
-    status: "failed",
-    date: "2025-12-05",
-    slipUrl: "/slips/inv-1003.pdf",
-  },
-];
+import { usePayments } from "@/hooks/use-payments";
 
 const plans: SubscriptionPlan[] = [
   {
@@ -68,6 +38,8 @@ const plans: SubscriptionPlan[] = [
 ];
 
 export default function Page() {
+  const { data: payments = [], isLoading } = usePayments();
+
   return (
     <>
       <PageHeader breadcrumbs={[{ title: "Subscriptions" }]} />
@@ -81,7 +53,7 @@ export default function Page() {
             <TabsTrigger value="plans">Subscription Plans</TabsTrigger>
           </TabsList>
           <TabsContent value="invoices">
-            <InvoicesPaymentsTable data={invoicesPayments} />
+            <InvoicesPaymentsTable data={payments} isLoading={isLoading} />
           </TabsContent>
           <TabsContent value="plans">
             <SubscriptionPlans plans={plans} />

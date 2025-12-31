@@ -7,6 +7,7 @@ import {
   SelectContent,
   SelectItem,
 } from "../../components/ui/select";
+import { tvAgeRatings } from "../../data/age-ratings";
 import FormSheet from "../form-sheet";
 import { Label } from "../ui/label";
 
@@ -43,7 +44,7 @@ export default function AnimeGeneralInfo({
       name: "",
       description: "",
       release_year: new Date().getFullYear(),
-      age_rating: "PG",
+      age_rating: "TV-PG",
       is_original: false,
       poster_file: undefined,
       ...defaultValues,
@@ -116,10 +117,11 @@ export default function AnimeGeneralInfo({
                 <SelectValue placeholder="Age Rating" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="G">G</SelectItem>
-                <SelectItem value="PG">PG</SelectItem>
-                <SelectItem value="PG-13">PG-13</SelectItem>
-                <SelectItem value="R">R</SelectItem>
+                {tvAgeRatings.map((rating) => (
+                  <SelectItem key={rating.value} value={rating.value}>
+                    {rating.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -1,80 +1,126 @@
-import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
-import { CustomColumnDef } from "@/types/data-table-columndef";
-import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Title } from "@/types/index";
+import {
+  formatBadgeStatusText,
+  formatBadgeStatusVariant,
+} from "@/lib/format-badge-status";
+import { Video } from "@/types";
+import { ColumnDef } from "@tanstack/react-table";
+import { Pencil, Trash2 } from "lucide-react";
 
-export type SeriesRow = {
-  title_id: string;
-  name: string;
-  release_year: number;
-  age_rating: string;
-  number_of_seasons: number;
-};
-
-const columns: CustomColumnDef<SeriesRow>[] = [
+export const createSeriesColumns = (
+  handleEditSeries: (series: Video) => void,
+  handleDeleteSeries: (id: string | number) => void
+): ColumnDef<Video>[] => [
   {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Title" />
+    id: "title",
+    header: "Title",
+    accessorFn: (row) => row.title,
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium">{row.original.title}</span>
+        {row.original.description && (
+          <span className="text-xs text-muted-foreground truncate max-w-md">
+            {row.original.description}
+          </span>
+        )}
+      </div>
     ),
-    meta: { headerAlign: "left", headerWidth: 200 },
   },
   {
-    accessorKey: "release_year",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Year" />
+    id: "release_year",
+    header: "Year",
+    accessorFn: (row) => row.release_year,
+    cell: ({ row }) => (
+      <span className="text-center">{row.original.release_year || "-"}</span>
     ),
-    meta: { headerAlign: "center", headerWidth: 80 },
   },
   {
-    accessorKey: "age_rating",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Rating" />
+    id: "age_rating",
+    header: "Rating",
+    accessorFn: (row) => row.age_rating,
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.original.age_rating || "N/A"}</Badge>
     ),
-    meta: { headerAlign: "center", headerWidth: 100 },
   },
   {
-    accessorKey: "number_of_seasons",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Seasons" />
+    id: "imdb_rating",
+    header: "IMDB",
+    accessorFn: (row) => row.imdb_rating,
+    cell: ({ row }) => {
+      const rating = row.original.imdb_rating;
+      return rating ? (
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-500">★</span>
+          <span>{rating}</span>
+        </div>
+      ) : (
+        <span>-</span>
+      );
+    },
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <div className="flex gap-1">
+        {row.original.status && (
+          <Badge
+            variant={formatBadgeStatusVariant(row.original.status)}
+            className="text-xs"
+          >
+            {formatBadgeStatusText(row.original.status)}
+          </Badge>
+        )}
+      </div>
     ),
-    meta: { headerAlign: "center", headerWidth: 100 },
+  },
+  {
+    id: "genres",
+    header: "Genres",
+    cell: ({ row }) => {
+      const genres = row.original.genres || [];
+      return (
+        <div className="flex flex-wrap gap-1 max-w-xs">
+          {genres.length > 0 ? (
+            genres.slice(0, 2).map((genre) => (
+              <Badge key={genre.id} variant="outline" className="text-xs">
+                {genre.name}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-xs">-</span>
+          )}
+          {genres.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{genres.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
+    },
   },
   {
     id: "actions",
-    header: "",
-    cell: ({ row }) => {
-      const router = useRouter();
-      const slug = row.original.name.toLowerCase().replace(/\s+/g, "-");
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="w-5 h-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/series/${slug}`)}>
-              View
-            </DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-    enableSorting: false,
-    enableHiding: false,
-    meta: { headerAlign: "center", headerWidth: 80 },
+    header: "Actions",
+    cell: ({ row }) => (
+      <div className="flex gap-2 justify-end">
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={() => handleEditSeries(row.original)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          size="icon"
+          variant="destructive"
+          onClick={() => handleDeleteSeries(row.original.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    meta: { headerAlign: "right" as const },
   },
 ];
-
-export default columns;

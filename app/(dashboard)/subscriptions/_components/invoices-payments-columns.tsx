@@ -1,22 +1,20 @@
-import React from "react";
+"use client";
+
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { CustomColumnDef } from "@/types/data-table-columndef";
-import { InvoicePayment } from "./invoices-payments-table";
+import { PaymentWithRelations } from "@/types";
+import { PaymentVerificationForm } from "@/components/forms/payment-verification-form";
+import { Eye } from "lucide-react";
 
-export const invoicesPaymentsColumns: CustomColumnDef<InvoicePayment, any>[] = [
+export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>[] = [
   {
-    accessorKey: "id",
-    header: "Invoice ID",
-    cell: ({ row }) => row.original.id,
+    accessorKey: "reference_code",
+    header: "Reference Code",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{row.original.reference_code}</span>
+    ),
     meta: { headerAlign: "left" },
   },
   {
@@ -24,20 +22,23 @@ export const invoicesPaymentsColumns: CustomColumnDef<InvoicePayment, any>[] = [
     header: "User",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.user.name}</div>
+        <div className="font-medium">{row.original.user?.name || "N/A"}</div>
         <div className="text-xs text-muted-foreground">
-          {row.original.user.email}
+          {row.original.user?.email || row.original.user?.phone || "N/A"}
         </div>
       </div>
     ),
     meta: { headerAlign: "left" },
   },
   {
-    accessorKey: "plan",
-    header: "Plan",
+    accessorKey: "subscription",
+    header: "Plan Type",
     cell: ({ row }) => (
-      <Badge variant={row.original.plan === "Premium" ? "default" : "outline"}>
-        {row.original.plan}
+      <Badge variant={row.original.subscription ? "default" : "outline"}>
+        {row.original.subscription?.plan_type
+          ? row.original.subscription.plan_type.charAt(0).toUpperCase() +
+            row.original.subscription.plan_type.slice(1)
+          : "N/A"}
       </Badge>
     ),
     meta: { headerAlign: "left" },
@@ -45,7 +46,11 @@ export const invoicesPaymentsColumns: CustomColumnDef<InvoicePayment, any>[] = [
   {
     accessorKey: "amount",
     header: "Amount",
-    cell: ({ row }) => row.original.amount,
+    cell: ({ row }) => (
+      <span className="font-medium">
+        {row.original.currency} {row.original.amount}
+      </span>
+    ),
     meta: { headerAlign: "left" },
   },
   {
@@ -54,11 +59,11 @@ export const invoicesPaymentsColumns: CustomColumnDef<InvoicePayment, any>[] = [
     cell: ({ row }) => (
       <Badge
         variant={
-          row.original.status === "paid"
+          row.original.status === "approved"
             ? "default"
             : row.original.status === "pending"
-            ? "secondary"
-            : "destructive"
+              ? "secondary"
+              : "destructive"
         }
       >
         {row.original.status.charAt(0).toUpperCase() +
@@ -68,40 +73,38 @@ export const invoicesPaymentsColumns: CustomColumnDef<InvoicePayment, any>[] = [
     meta: { headerAlign: "left" },
   },
   {
-    accessorKey: "date",
+    accessorKey: "created_at",
     header: "Date",
-    cell: ({ row }) => row.original.date,
+    cell: ({ row }) => {
+      const date = new Date(row.original.created_at);
+      return date.toLocaleDateString();
+    },
     meta: { headerAlign: "left" },
   },
   {
     id: "actions",
     header: "Action",
-    cell: ({ row }) => {
-      const [open, setOpen] = React.useState(false);
+    cell: function ActionsCell({ row }) {
+      const [open, setOpen] = useState(false);
+      const payment = row.original;
+
       return (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              View
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Payment Slip</DialogTitle>
-            </DialogHeader>
-            <img
-              src={row.original.slipUrl}
-              alt="Payment Slip"
-              className="w-full h-auto rounded border"
-              style={{ maxHeight: 400, objectFit: "contain" }}
-            />
-            <DialogClose asChild>
-              <Button variant="outline" className="mt-4 w-full">
-                Close
-              </Button>
-            </DialogClose>
-          </DialogContent>
-        </Dialog>
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setOpen(true)}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            {payment.status === "pending" ? "Verify" : "View"}
+          </Button>
+
+          <PaymentVerificationForm
+            payment={payment}
+            open={open}
+            onOpenChange={setOpen}
+          />
+        </>
       );
     },
     meta: { headerAlign: "left" },

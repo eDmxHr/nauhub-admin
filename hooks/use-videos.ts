@@ -8,9 +8,10 @@ export function useVideos(type?: "movie" | "series" | "anime") {
     queryKey: ["videos", type],
     queryFn: async () => {
       try {
-        const url = type ? `/videos?type=${type}` : "/videos";
-        const response = await api.get<{ videos: Video[] }>(url);
-        const data = response.data.videos;
+        const url = type ? `admin/videos?type=${type}` : "admin/videos";
+        const response = await api.get<{ data: Video[] }>(url);
+        const data = response.data.data;
+
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching videos:", error);
@@ -20,12 +21,12 @@ export function useVideos(type?: "movie" | "series" | "anime") {
   });
 }
 
-// Fetch single video
-export function useVideo(id: string | number) {
+// Fetch single video (with seasons and episodes for series)
+export function useVideo(id: number) {
   return useQuery({
     queryKey: ["videos", id],
     queryFn: async () => {
-      const response = await api.get<{ video: Video }>(`/admin/videos/${id}`);
+      const response = await api.get<{ video: Video }>(`videos/${id}`);
       return response.data.video;
     },
     enabled: !!id,

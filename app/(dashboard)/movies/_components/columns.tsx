@@ -1,5 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  formatBadgeStatusText,
+  formatBadgeStatusVariant,
+} from "@/lib/format-badge-status";
 import { Video } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash2 } from "lucide-react";
@@ -77,9 +81,12 @@ export const createMovieColumns = (
     header: "Status",
     cell: ({ row }) => (
       <div className="flex gap-1">
-        {row.original.is_published && (
-          <Badge variant="default" className="text-xs">
-            Published
+        {row.original.status && (
+          <Badge
+            variant={formatBadgeStatusVariant(row.original.status)}
+            className="text-xs"
+          >
+            {formatBadgeStatusText(row.original.status)}
           </Badge>
         )}
       </div>
@@ -117,14 +124,14 @@ export const createMovieColumns = (
       <div className="flex gap-2 justify-end">
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           onClick={() => handleEditMovie(row.original)}
         >
           <Pencil className="h-4 w-4" />
         </Button>
         <Button
           size="icon"
-          variant="ghost"
+          variant="destructive"
           onClick={() => handleDeleteMovie(row.original.id)}
         >
           <Trash2 className="h-4 w-4" />

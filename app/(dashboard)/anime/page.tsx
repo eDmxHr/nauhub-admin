@@ -8,51 +8,105 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { useState, useMemo } from "react";
-import { mockAnime } from "../../data/titles-anime-sample";
-import columns from "./_components/columns";
+import { createAnimeColumns } from "./_components/columns";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableFilters } from "@/components/table/data-table-filters";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import BulkActions from "@/components/table/bulk-actions";
-import { TableSkeletonRows } from "@/components/table/table-skeleton-rows";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
-import AnimeGeneralInfo from "@/components/forms/anime-general-info";
+import AnimeForm from "@/components/forms/anime-form";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import {
+  useVideos,
+  useCreateVideo,
+  useUpdateVideo,
+  useDeleteVideo,
+} from "@/hooks/use-videos";
+import { Video } from "@/types";
 
-export type AnimeRow = {
-  title_id: string;
-  name: string;
-  release_year: number;
-  age_rating: string;
-  number_of_episodes: number;
-};
-
-// Use mockAnime data
 export default function Page() {
-  const animeRows: AnimeRow[] = useMemo(() => {
-    return mockAnime.map((title) => {
-      const episodes = Array.isArray(title.episodes) ? title.episodes : [];
-      return {
-        title_id: title.title_id,
-        name: title.name,
-        release_year: title.release_year,
-        age_rating: title.age_rating,
-        number_of_episodes: episodes.length,
-      };
-    });
-  }, []);
+  const { data: anime = [], isLoading } = useVideos("anime");
+  const createAnimeMutation = useCreateVideo();
+  const updateAnimeMutation = useUpdateVideo();
+  const deleteAnimeMutation = useDeleteVideo();
 
-  // Faceted filter options (example: year)
+  const [open, setOpen] = useState(false);
+  const [editingAnime, setEditingAnime] = useState<Video | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAnimeId, setDeleteAnimeId] = useState<string | number | null>(
+    null
+  );
+  const [deleteAnimeTitle, setDeleteAnimeTitle] = useState("");
+
+  const [rowSelection, setRowSelection] = useState({});
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<
+    import("@tanstack/react-table").ColumnFiltersState
+  >([]);
+  const [sorting, setSorting] = useState<
+    import("@tanstack/react-table").SortingState
+  >([]);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  const handleEditAnime = (anime: Video) => {
+    setEditingAnime(anime);
+    setOpen(true);
+  };
+
+  const handleDeleteAnime = (id: string | number) => {
+    const animeToDelete = anime.find((a) => a.id === id);
+    if (animeToDelete) {
+      setDeleteAnimeId(id);
+      setDeleteAnimeTitle(animeToDelete.title);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteAnimeId) return;
+    try {
+      await deleteAnimeMutation.mutateAsync(deleteAnimeId);
+      setDeleteDialogOpen(false);
+      setDeleteAnimeId(null);
+      setDeleteAnimeTitle("");
+    } catch (error: any) {
+      console.error("Failed to delete anime:", error);
+    }
+  };
+
+  const handleSubmit = async (data: Partial<Video>) => {
+    try {
+      if (editingAnime) {
+        await updateAnimeMutation.mutateAsync({
+          id: editingAnime.id,
+          data,
+        });
+      } else {
+        await createAnimeMutation.mutateAsync(data);
+      }
+      setOpen(false);
+      setEditingAnime(null);
+    } catch (error: any) {
+      console.error("Failed to save anime:", error);
+    }
+  };
+
+  const columns = useMemo(
+    () => createAnimeColumns(handleEditAnime, handleDeleteAnime),
+    []
+  );
+
   const yearOptions = useMemo(() => {
-    return [...new Set(animeRows.map((d) => String(d.release_year)))]
+    return [...new Set(anime.map((d) => String(d.release_year)))]
+      .filter(Boolean)
       .sort((a, b) => Number(b) - Number(a))
       .map((y) => ({ label: y, value: y }));
-  }, [animeRows]);
+  }, [anime]);
 
   const filtersConfig = {
-    globalSearch: { placeholder: "Search by name..." },
+    globalSearch: { placeholder: "Search anime..." },
     facetedFilters: [
       {
         columnId: "release_year",
@@ -63,29 +117,19 @@ export default function Page() {
         columnId: "age_rating",
         title: "Age Rating",
         options: [
-          { label: "G", value: "G" },
-          { label: "PG", value: "PG" },
-          { label: "PG-13", value: "PG-13" },
-          { label: "R", value: "R" },
+          { label: "TV-Y", value: "TV-Y" },
+          { label: "TV-Y7", value: "TV-Y7" },
+          { label: "TV-G", value: "TV-G" },
+          { label: "TV-PG", value: "TV-PG" },
+          { label: "TV-14", value: "TV-14" },
+          { label: "TV-MA", value: "TV-MA" },
         ],
       },
     ],
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [rowSelection, setRowSelection] = useState({});
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState<
-    import("@tanstack/react-table").ColumnFiltersState
-  >([]);
-  const [sorting, setSorting] = useState<
-    import("@tanstack/react-table").SortingState
-  >([]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [open, setOpen] = useState(false);
-
   const table = useReactTable({
-    data: animeRows,
+    data: anime,
     columns,
     state: {
       rowSelection,
@@ -116,10 +160,24 @@ export default function Page() {
         title="Anime"
         description="Manage anime in your collection"
         showButton={true}
-        setOpen={setOpen}
+        setOpen={() => {
+          setEditingAnime(null);
+          setOpen(true);
+        }}
         buttonLabel="Add Anime"
       >
-        <AnimeGeneralInfo open={open} onOpenChange={setOpen} />
+        <AnimeForm
+          open={open}
+          onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) setEditingAnime(null);
+          }}
+          onSubmit={handleSubmit}
+          editingAnime={editingAnime}
+          isLoading={
+            createAnimeMutation.isPending || updateAnimeMutation.isPending
+          }
+        />
         <DataTableFilters
           table={table}
           filters={filtersConfig}
@@ -129,13 +187,18 @@ export default function Page() {
           table={table}
           actions={<Button variant="destructive">Delete Selected</Button>}
         />
-        {isLoading ? (
-          <TableSkeletonRows columns={columns} rowCount={10} />
-        ) : (
-          <DataTable columns={columns} table={table} isLoading={isLoading} />
-        )}
+        <DataTable columns={columns} table={table} isLoading={isLoading} />
         <DataTablePagination table={table} />
       </PageWrapper>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete Anime"
+        description={`Are you sure you want to delete "${deleteAnimeTitle}"? This will also delete all seasons and episodes. This action cannot be undone.`}
+        isLoading={deleteAnimeMutation.isPending}
+      />
     </>
   );
 }

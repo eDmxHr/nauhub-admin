@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { DataTable } from "@/components/table/data-table";
 import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { Video } from "@/types";
 import { createMovieColumns } from "./_components/columns";
 import { MovieForm } from "./_components/movie-form";
@@ -18,6 +18,8 @@ import {
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
 export default function MoviesPage() {
+  const router = useRouter();
+
   // API hooks - filter for movies only
   const { data: movies = [], isLoading } = useVideos("movie");
   const createMovieMutation = useCreateVideo();
@@ -101,7 +103,12 @@ export default function MoviesPage() {
         setOpen={handleAddNew}
         buttonLabel="Add Movie"
       >
-        <DataTable columns={columns} table={table} isLoading={isLoading} />
+        <DataTable
+          columns={columns}
+          table={table}
+          isLoading={isLoading}
+          onRowClick={(row) => router.push(`/movies/${row.original.id}`)}
+        />
       </PageWrapper>
 
       <MovieForm

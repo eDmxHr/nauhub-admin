@@ -8,19 +8,14 @@ import {
   getSortedRowModel,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+import { PaymentWithRelations } from "@/types";
 
-export type InvoicePayment = {
-  id: string;
-  user: { name: string; email: string };
-  plan: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
-  date: string;
-  slipUrl: string;
-};
+interface InvoicesPaymentsTableProps {
+  data: PaymentWithRelations[];
+  isLoading?: boolean;
+}
 
-export function InvoicesPaymentsTable({ data }: { data: InvoicePayment[] }) {
+export function InvoicesPaymentsTable({ data, isLoading = false }: InvoicesPaymentsTableProps) {
   const table = useReactTable({
     data,
     columns: invoicesPaymentsColumns,
@@ -32,9 +27,9 @@ export function InvoicesPaymentsTable({ data }: { data: InvoicePayment[] }) {
   return (
     <>
       <div className="flex justify-start mb-4">
-        <h6>Recent Invoices</h6>
+        <h6>Payment Verification</h6>
       </div>
-      <DataTable table={table} columns={invoicesPaymentsColumns} />
+      <DataTable table={table} columns={invoicesPaymentsColumns} isLoading={isLoading} />
     </>
   );
 }

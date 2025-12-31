@@ -10,6 +10,7 @@ import { Video } from "@/types";
 import { useState, useEffect } from "react";
 import { useGenres } from "@/hooks/use-genres";
 import { useCategories } from "@/hooks/use-categories";
+import { movieAgeRatings } from "@/data/age-ratings";
 
 interface MovieFormProps {
   open: boolean;
@@ -18,8 +19,6 @@ interface MovieFormProps {
   editingMovie?: Video | null;
   isLoading?: boolean;
 }
-
-const AGE_RATINGS = ["G", "PG", "PG-13", "R", "TV-MA", "NC-17"];
 
 export function MovieForm({
   open,
@@ -245,9 +244,9 @@ export function MovieForm({
               }
               className="w-full h-10 px-3 rounded-md border border-input bg-background"
             >
-              {AGE_RATINGS.map((rating) => (
-                <option key={rating} value={rating}>
-                  {rating}
+              {movieAgeRatings.map((rating) => (
+                <option key={rating.value} value={rating.value}>
+                  {rating.label}
                 </option>
               ))}
             </select>

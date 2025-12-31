@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { CustomColumnDef } from "@/types/data-table-columndef";
+import { User } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,82 +12,77 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Shield, Ban, CheckCircle } from "lucide-react";
+import { UserRoleForm } from "@/components/dialogs/user-role-form";
+import { UserToggleActiveDialog } from "@/components/dialogs/user-toggle-active-dialog";
 
-export type UserRow = {
-  id: number;
-  name: string;
-  email: string;
-  subscription: string;
-  devices: number;
-  joined: string;
-  status: string;
-  isBanned: boolean;
-  isNew: boolean;
-};
-
-export const userColumns: CustomColumnDef<UserRow>[] = [
+export const userColumns: CustomColumnDef<User>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User" />
-    ),
+    header: "Name",
     cell: ({ row }) => (
       <div className="flex flex-col gap-1">
         <span className="font-medium flex items-center gap-2">
           {row.original.name}
+          {row.original.role === "admin" && (
+            <Shield className="h-3 w-3 text-primary" />
+          )}
         </span>
         <span className="text-xs text-muted-foreground">
-          {row.original.email}
+          {row.original.email || row.original.phone || "N/A"}
         </span>
       </div>
     ),
-    meta: { headerAlign: "left", headerWidth: 200 },
   },
   {
-    accessorKey: "subscription",
+    accessorKey: "role",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Role" />
+    ),
+    cell: ({ row }) => (
+      <Badge variant={row.original.role === "admin" ? "default" : "secondary"}>
+        {row.original.role.charAt(0).toUpperCase() + row.original.role.slice(1)}
+      </Badge>
+    ),
+    meta: { headerAlign: "center", headerWidth: 100 },
+  },
+  {
+    accessorKey: "is_subscribed",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Subscription" />
     ),
     cell: ({ row }) => (
-      <Badge
-        variant={
-          row.original.subscription === "Premium" ? "default" : "secondary"
-        }
-      >
-        {row.original.subscription}
+      <Badge variant={row.original.is_subscribed ? "default" : "outline"}>
+        {row.original.is_subscribed ? "Subscribed" : "Free"}
       </Badge>
     ),
     meta: { headerAlign: "center", headerWidth: 120 },
   },
   {
-    accessorKey: "devices",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Devices" />
+    accessorKey: "phone_verified",
+    header: "Phone Verified",
+    cell: ({ row }) => (
+      <Badge variant={row.original.phone_verified ? "default" : "outline"}>
+        {row.original.phone_verified ? "Verified" : "Not Verified"}
+      </Badge>
     ),
-    cell: ({ row }) => row.original.devices,
-    meta: { headerAlign: "center", headerWidth: 80 },
   },
   {
-    accessorKey: "joined",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Joined" />
-    ),
-    cell: ({ row }) => row.original.joined,
-    meta: { headerAlign: "center", headerWidth: 120 },
+    accessorKey: "created_at",
+    header: "Created At",
+    cell: ({ row }) => {
+      const date = new Date(row.original.created_at);
+      return date.toLocaleDateString();
+    },
   },
   {
-    accessorKey: "status",
+    accessorKey: "is_active",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
     cell: ({ row }) => (
-      <Badge
-        variant={row.original.status === "active" ? "default" : "destructive"}
-      >
-        {row.original.status.charAt(0).toUpperCase() +
-          row.original.status.slice(1)}
+      <Badge variant={row.original.is_active ? "default" : "destructive"}>
+        {row.original.is_active ? "Active" : "Blocked"}
       </Badge>
     ),
     meta: { headerAlign: "center", headerWidth: 100 },
@@ -91,30 +90,62 @@ export const userColumns: CustomColumnDef<UserRow>[] = [
   {
     id: "actions",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Actions" />
+      <DataTableColumnHeader
+        className="flex justify-start"
+        column={column}
+        title="Actions"
+      />
     ),
-    cell: ({ row }) => {
-      const router = useRouter();
-      const slug = row.original.name.toLowerCase().replace(/\s+/g, "-");
+    cell: function ActionsCell({ row }) {
+      const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+      const [toggleActiveDialogOpen, setToggleActiveDialogOpen] =
+        useState(false);
+
+      const user = row.original;
+
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="w-5 h-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => router.push(`/user-management/${slug}`)}
-            >
-              View
-            </DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setRoleDialogOpen(true)}>
+                <Shield className="mr-2 h-4 w-4" />
+                Change Role
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setToggleActiveDialogOpen(true)}>
+                {user.is_active ? (
+                  <>
+                    <Ban className="mr-2 h-4 w-4" />
+                    Block User
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Unblock User
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <UserRoleForm
+            user={user}
+            open={roleDialogOpen}
+            onOpenChange={setRoleDialogOpen}
+          />
+
+          <UserToggleActiveDialog
+            user={user}
+            open={toggleActiveDialogOpen}
+            onOpenChange={setToggleActiveDialogOpen}
+          />
+        </>
       );
     },
-    meta: { headerAlign: "center", headerWidth: 180 },
+    meta: { headerAlign: "center", headerWidth: 80 },
   },
 ];

@@ -1,110 +1,96 @@
 "use client";
 
-import {
-  useReactTable,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
-} from "@tanstack/react-table";
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
-import columns from "./_components/columns";
 import { DataTable } from "@/components/table/data-table";
-import { DataTableFilters } from "@/components/table/data-table-filters";
-import { DataTablePagination } from "@/components/table/data-table-pagination";
-import BulkActions from "@/components/table/bulk-actions";
-import { TableSkeletonRows } from "@/components/table/table-skeleton-rows";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
+import { Video } from "@/types";
+import { createSeriesColumns } from "./_components/columns";
 import SeriesGeneralInfo from "@/components/forms/series-general-info";
-import { mockTitles } from "@/data/titles";
+import {
+  useVideos,
+  useCreateVideo,
+  useUpdateVideo,
+  useDeleteVideo,
+} from "@/hooks/use-videos";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
 export default function Page() {
-  // Only use titles of type 'Series'
-  const seriesTitles = useMemo(
-    () => mockTitles.filter((t) => t.title_type === "Series"),
-    []
-  );
-  // Count seasons for each series
-  const seriesRows = useMemo(() => {
-    return seriesTitles.map((title) => {
-      const seasons = Array.isArray((title as any).seasons)
-        ? (title as any).seasons
-        : [];
-      return {
-        title_id: title.title_id,
-        name: title.name,
-        release_year: title.release_year,
-        age_rating: title.age_rating,
-        number_of_seasons: seasons.length,
-      };
-    });
-  }, [seriesTitles]);
+  const router = useRouter();
 
-  // Faceted filter options (example: year)
-  const yearOptions = useMemo(() => {
-    return [...new Set(seriesRows.map((d) => String(d.release_year)))]
-      .sort((a, b) => Number(b) - Number(a))
-      .map((y) => ({ label: y, value: y }));
-  }, [seriesRows]);
+  // API hooks - filter for series only
+  const { data: series = [], isLoading } = useVideos("series");
+  const createSeriesMutation = useCreateVideo();
+  const updateSeriesMutation = useUpdateVideo();
+  const deleteSeriesMutation = useDeleteVideo();
 
-  const filtersConfig = {
-    globalSearch: { placeholder: "Search by name..." },
-    facetedFilters: [
-      {
-        columnId: "release_year",
-        title: "Year",
-        options: yearOptions,
-      },
-      {
-        columnId: "age_rating",
-        title: "Age Rating",
-        options: [
-          { label: "G", value: "G" },
-          { label: "PG", value: "PG" },
-          { label: "PG-13", value: "PG-13" },
-          { label: "R", value: "R" },
-        ],
-      },
-    ],
+  // Dialog states
+  const [seriesDialogOpen, setSeriesDialogOpen] = useState(false);
+  const [editingSeries, setEditingSeries] = useState<Video | null>(null);
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | number | null>(null);
+  const [deleteTitle, setDeleteTitle] = useState("");
+
+  // Handlers
+  const handleSaveSeries = async (data: Partial<Video>) => {
+    try {
+      if (editingSeries) {
+        await updateSeriesMutation.mutateAsync({
+          id: editingSeries.id,
+          data,
+        });
+      } else {
+        await createSeriesMutation.mutateAsync({ ...data, type: "series" });
+      }
+      setSeriesDialogOpen(false);
+      setEditingSeries(null);
+    } catch (error: any) {
+      console.error("Failed to save series:", error);
+    }
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [rowSelection, setRowSelection] = useState({});
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState<
-    import("@tanstack/react-table").ColumnFiltersState
-  >([]);
-  const [sorting, setSorting] = useState<
-    import("@tanstack/react-table").SortingState
-  >([]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [open, setOpen] = useState(false);
+  const handleEditSeries = (series: Video) => {
+    setEditingSeries(series);
+    setSeriesDialogOpen(true);
+  };
+
+  const handleDeleteSeries = (id: string | number) => {
+    const seriesItem = series.find((s) => s.id === id);
+    if (seriesItem) {
+      setDeleteId(id);
+      setDeleteTitle(seriesItem.title);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteSeriesMutation.mutateAsync(deleteId);
+      setDeleteDialogOpen(false);
+      setDeleteId(null);
+      setDeleteTitle("");
+    } catch (error: any) {
+      console.error("Failed to delete series:", error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingSeries(null);
+    setSeriesDialogOpen(true);
+  };
+
+  // Create columns with handler functions
+  const columns = createSeriesColumns(handleEditSeries, handleDeleteSeries);
 
   const table = useReactTable({
-    data: seriesRows,
+    data: series,
     columns,
-    state: {
-      rowSelection,
-      globalFilter,
-      columnFilters,
-      sorting,
-      pagination,
-    },
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters,
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: false,
-    manualSorting: false,
-    manualFiltering: false,
-    enableRowSelection: true,
   });
 
   return (
@@ -114,26 +100,35 @@ export default function Page() {
         title="Series"
         description="Manage series in your collection"
         showButton={true}
-        setOpen={setOpen}
+        setOpen={handleAddNew}
         buttonLabel="Add Series"
       >
-        <SeriesGeneralInfo open={open} onOpenChange={setOpen} />
-        <DataTableFilters
+        <DataTable
+          columns={columns}
           table={table}
-          filters={filtersConfig}
-          showViewOptions={false}
+          isLoading={isLoading}
+          onRowClick={(row) => router.push(`/series/${row.original.id}`)}
         />
-        <BulkActions
-          table={table}
-          actions={<Button variant="destructive">Delete Selected</Button>}
-        />
-        {isLoading ? (
-          <TableSkeletonRows columns={columns} rowCount={10} />
-        ) : (
-          <DataTable columns={columns} table={table} isLoading={isLoading} />
-        )}
-        <DataTablePagination table={table} />
       </PageWrapper>
+
+      <SeriesGeneralInfo
+        open={seriesDialogOpen}
+        onOpenChange={setSeriesDialogOpen}
+        onSubmit={handleSaveSeries}
+        editingSeries={editingSeries}
+        isLoading={
+          createSeriesMutation.isPending || updateSeriesMutation.isPending
+        }
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete Series"
+        description={`Are you sure you want to delete "${deleteTitle}"? This action cannot be undone.`}
+        isLoading={deleteSeriesMutation.isPending}
+      />
     </>
   );
 }

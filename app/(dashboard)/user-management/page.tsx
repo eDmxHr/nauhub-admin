@@ -5,7 +5,7 @@ import { DataTable } from "@/components/table/data-table";
 import { DataTableFilters } from "@/components/table/data-table-filters";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { userColumns } from "./_components/columns";
-import { mockUsers, UserRow } from "../../data/mock-users";
+import { useUsers, useUserStats } from "@/hooks/use-users";
 import {
   useReactTable,
   getCoreRowModel,
@@ -17,30 +17,10 @@ import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Card } from "@/components/ui/card";
 
-const users: UserRow[] = mockUsers;
-
-// Mock metrics data
-const userMetrics = {
-  new_signups: [
-    { day: "2025-12-02", signups: 10 },
-    { day: "2025-12-03", signups: 12 },
-    { day: "2025-12-04", signups: 8 },
-    { day: "2025-12-05", signups: 15 },
-    { day: "2025-12-06", signups: 9 },
-    { day: "2025-12-07", signups: 11 },
-    { day: "2025-12-08", signups: 14 },
-  ],
-};
-
-const userStats = {
-  total: 1200,
-  active: 950,
-  banned: 15,
-  newToday: 12,
-};
-
 export default function UserManagement() {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { data: users = [], isLoading } = useUsers();
+  const { data: stats } = useUserStats();
+
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnFilters, setColumnFilters] = React.useState<
@@ -84,19 +64,27 @@ export default function UserManagement() {
     globalSearch: { placeholder: "Search by name or email..." },
     facetedFilters: [
       {
-        columnId: "subscription",
-        title: "Subscription",
+        columnId: "role",
+        title: "Role",
         options: [
-          { label: "Premium", value: "Premium" },
-          { label: "Free", value: "Free" },
+          { label: "Admin", value: "admin" },
+          { label: "User", value: "user" },
         ],
       },
       {
-        columnId: "status",
+        columnId: "is_active",
         title: "Status",
         options: [
-          { label: "Active", value: "active" },
-          { label: "Banned", value: "banned" },
+          { label: "Active", value: "true" },
+          { label: "Blocked", value: "false" },
+        ],
+      },
+      {
+        columnId: "is_subscribed",
+        title: "Subscription",
+        options: [
+          { label: "Subscribed", value: "true" },
+          { label: "Not Subscribed", value: "false" },
         ],
       },
     ],
@@ -115,40 +103,40 @@ export default function UserManagement() {
           <Card className="p-6 flex flex-col items-start gap-2">
             <span className="text-xs text-muted-foreground">Total Users</span>
             <span className="text-2xl font-bold">
-              {userStats.total.toLocaleString()}
+              {stats?.total_users?.toLocaleString() || 0}
             </span>
             <span className="text-xs text-muted-foreground">
-              Active: {userStats.active.toLocaleString()}
+              Active: {stats?.active_users?.toLocaleString() || 0}
             </span>
           </Card>
           <Card className="p-6 flex flex-col items-start gap-2">
             <span className="text-xs text-muted-foreground">Active Users</span>
             <span className="text-2xl font-bold">
-              {userStats.active.toLocaleString()}
+              {stats?.active_users?.toLocaleString() || 0}
             </span>
             <span className="text-xs text-muted-foreground">
-              Total: {userStats.total.toLocaleString()}
+              Total: {stats?.total_users?.toLocaleString() || 0}
             </span>
           </Card>
           <Card className="p-6 flex flex-col items-start gap-2">
-            <span className="text-xs text-muted-foreground">Banned Users</span>
+            <span className="text-xs text-muted-foreground">Blocked Users</span>
             <span className="text-2xl font-bold">
-              {userStats.banned.toLocaleString()}
+              {stats?.blocked_users?.toLocaleString() || 0}
             </span>
             <span className="text-xs text-muted-foreground">
-              Active: {userStats.active.toLocaleString()}
+              Admins: {stats?.total_admins?.toLocaleString() || 0}
             </span>
           </Card>
           <Card className="p-6 flex flex-col items-start gap-2">
             <span className="text-xs text-muted-foreground">
-              New Users Today
+              Subscribed Users
             </span>
             <span className="text-2xl font-bold">
-              {userStats.newToday.toLocaleString()}
+              {stats?.subscribed_users?.toLocaleString() || 0}
             </span>
             <span className="text-xs text-muted-foreground">
-              Yesterday:{" "}
-              {userMetrics.new_signups.at(-1)?.signups.toLocaleString()}
+              Phone Verified:{" "}
+              {stats?.phone_verified_users?.toLocaleString() || 0}
             </span>
           </Card>
         </div>

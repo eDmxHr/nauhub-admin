@@ -104,7 +104,7 @@ export function DataTableFilters<TData>({
             placeholder={filters.globalSearch.placeholder || "Search..."}
             value={table.getState().globalFilter ?? ""}
             onChange={(event) => handleGlobalFilterChange(event.target.value)}
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-37.5 lg:w-62.5"
           />
         )}
 
