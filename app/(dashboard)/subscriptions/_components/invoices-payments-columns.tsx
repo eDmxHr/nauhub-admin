@@ -8,8 +8,12 @@ import { PaymentWithRelations } from "@/types";
 import { PaymentVerificationForm } from "@/components/forms/payment-verification-form";
 import { Eye } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
+import { formatDate } from "@/lib/utils";
 
-export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>[] = [
+export const invoicesPaymentsColumns: CustomColumnDef<
+  PaymentWithRelations,
+  any
+>[] = [
   {
     accessorKey: "reference_code",
     header: ({ column }) => (
@@ -77,8 +81,8 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
           row.original.status === "approved"
             ? "default"
             : row.original.status === "pending"
-              ? "secondary"
-              : "destructive"
+            ? "secondary"
+            : "destructive"
         }
       >
         {row.original.status.charAt(0).toUpperCase() +
@@ -97,8 +101,7 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
       <DataTableColumnHeader column={column} title="Date" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.original.created_at);
-      return date.toLocaleDateString();
+      return formatDate(row.original.created_at);
     },
     meta: { headerAlign: "left" },
   },
@@ -113,11 +116,7 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
 
       return (
         <>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setOpen(true)}
-          >
+          <Button size="icon" variant="ghost" onClick={() => setOpen(true)}>
             <Eye className="h-4 w-4" />
           </Button>
 

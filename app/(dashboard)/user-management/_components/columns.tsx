@@ -15,6 +15,7 @@ import {
 import { MoreHorizontal, Shield, Ban, CheckCircle } from "lucide-react";
 import { UserRoleForm } from "@/components/dialogs/user-role-form";
 import { UserToggleActiveDialog } from "@/components/dialogs/user-toggle-active-dialog";
+import { formatDate } from "@/lib/utils";
 
 export const userColumns: CustomColumnDef<User>[] = [
   {
@@ -76,8 +77,7 @@ export const userColumns: CustomColumnDef<User>[] = [
     accessorKey: "created_at",
     header: "Created At",
     cell: ({ row }) => {
-      const date = new Date(row.original.created_at);
-      return date.toLocaleDateString();
+      return formatDate(row.original.created_at);
     },
   },
   {

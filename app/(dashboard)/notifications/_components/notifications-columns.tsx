@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, extractDateTime } from "@/lib/utils";
 
 function NotificationDetails({ notification }: { notification: Notification }) {
   return (
@@ -205,13 +205,11 @@ export const notificationsColumns: CustomColumnDef<Notification, any>[] = [
       <DataTableColumnHeader column={column} title="Date" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.original.created_at);
+      const date = extractDateTime(row.original.created_at);
       return (
         <div>
-          <div className="text-sm">{date.toLocaleDateString()}</div>
-          <div className="text-xs text-muted-foreground">
-            {date.toLocaleTimeString()}
-          </div>
+          <p>{date.date}</p>
+          <p className="text-muted-foreground text-xs">{date.time}</p>
         </div>
       );
     },

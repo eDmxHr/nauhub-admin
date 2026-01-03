@@ -24,6 +24,7 @@ import {
 import LoadingState from "@/components/loading-state";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
 
 ChartJS.register(
   CategoryScale,
@@ -291,7 +292,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {formatDate(user.created_at)}
                   </span>
                 </div>
               ))}
@@ -327,7 +328,7 @@ export default function DashboardPage() {
                   <div className="text-right">
                     <p className="text-sm font-medium">MVR {sub.amount}</p>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(sub.created_at).toLocaleDateString()}
+                      {formatDate(sub.created_at)}
                     </span>
                   </div>
                 </div>
@@ -380,7 +381,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(video.created_at).toLocaleDateString()}
+                    {formatDate(video.created_at)}
                   </span>
                 </div>
               ))}

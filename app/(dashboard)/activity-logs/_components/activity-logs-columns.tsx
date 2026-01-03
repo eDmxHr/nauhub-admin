@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { extractDateTime } from "@/lib/utils";
 
 function ActivityLogDetails({ log }: { log: ActivityLog }) {
   return (
@@ -182,13 +183,11 @@ export const activityLogsColumns: CustomColumnDef<ActivityLog, any>[] = [
       <DataTableColumnHeader column={column} title="Date" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.original.created_at);
+      const date = extractDateTime(row.original.created_at);
       return (
         <div>
-          <div className="text-sm">{date.toLocaleDateString()}</div>
-          <div className="text-xs text-muted-foreground">
-            {date.toLocaleTimeString()}
-          </div>
+          <div className="text-sm">{date.date}</div>
+          <div className="text-xs text-muted-foreground">{date.time}</div>
         </div>
       );
     },
