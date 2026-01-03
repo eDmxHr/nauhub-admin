@@ -4,7 +4,7 @@ import { Payment, PaymentWithRelations } from "@/types";
 
 // Response types
 interface PaymentsResponse {
-  data: PaymentWithRelations[];
+  payments: PaymentWithRelations[];
 }
 
 // Fetch all pending payments
@@ -13,8 +13,10 @@ export function usePendingPayments() {
     queryKey: ["payments", "pending"],
     queryFn: async () => {
       try {
-        const response = await api.get<PaymentsResponse>("/admin/payments/pending");
-        const data = response.data.data;
+        const response = await api.get<PaymentsResponse>(
+          "/admin/payments/pending"
+        );
+        const data = response.data.payments;
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching pending payments:", error);
@@ -31,7 +33,7 @@ export function usePayments() {
     queryFn: async () => {
       try {
         const response = await api.get<PaymentsResponse>("/admin/payments/all");
-        const data = response.data.data;
+        const data = response.data.payments;
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching payments:", error);
@@ -46,8 +48,16 @@ export function useApprovePayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, admin_notes }: { id: number; admin_notes?: string }) => {
-      const response = await api.post(`/admin/payments/${id}/approve`, { admin_notes });
+    mutationFn: async ({
+      id,
+      admin_notes,
+    }: {
+      id: number;
+      admin_notes?: string;
+    }) => {
+      const response = await api.post(`/admin/payments/${id}/approve`, {
+        admin_notes,
+      });
       return response.data;
     },
     onSuccess: () => {
@@ -63,8 +73,16 @@ export function useRejectPayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, admin_notes }: { id: number; admin_notes: string }) => {
-      const response = await api.post(`/admin/payments/${id}/reject`, { admin_notes });
+    mutationFn: async ({
+      id,
+      admin_notes,
+    }: {
+      id: number;
+      admin_notes: string;
+    }) => {
+      const response = await api.post(`/admin/payments/${id}/reject`, {
+        admin_notes,
+      });
       return response.data;
     },
     onSuccess: () => {

@@ -14,6 +14,8 @@ import {
   Settings2,
   OrigamiIcon,
   VideotapeIcon,
+  WrenchIcon,
+  ActivityIcon,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -24,7 +26,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import SidebarNavGroup from "@/components/ui/sidebar-group";
-import { usePathname } from "next/navigation";
 
 // Navigation groups with better organization and visual hierarchy
 const navigationGroups = {
@@ -102,17 +103,25 @@ const navigationGroups = {
         icon: ShieldIcon,
       },
       {
+        title: "Activity Logs",
+        url: "/activity-logs",
+        icon: ActivityIcon,
+      },
+      {
         title: "Settings",
         url: "/settings",
         icon: Settings2,
+      },
+      {
+        title: "Integrations",
+        url: "/integrations",
+        icon: WrenchIcon,
       },
     ],
   },
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname();
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarContent className="gap-1">

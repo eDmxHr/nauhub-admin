@@ -56,6 +56,11 @@ export const userColumns: CustomColumnDef<User>[] = [
         {row.original.is_subscribed ? "Subscribed" : "Free"}
       </Badge>
     ),
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true;
+      const boolValue = row.getValue(id) as boolean;
+      return value.includes(String(boolValue));
+    },
     meta: { headerAlign: "center", headerWidth: 120 },
   },
   {
@@ -85,6 +90,11 @@ export const userColumns: CustomColumnDef<User>[] = [
         {row.original.is_active ? "Active" : "Blocked"}
       </Badge>
     ),
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true;
+      const boolValue = row.getValue(id) as boolean;
+      return value.includes(String(boolValue));
+    },
     meta: { headerAlign: "center", headerWidth: 100 },
   },
   {

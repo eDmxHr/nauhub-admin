@@ -7,11 +7,14 @@ import { CustomColumnDef } from "@/types/data-table-columndef";
 import { PaymentWithRelations } from "@/types";
 import { PaymentVerificationForm } from "@/components/forms/payment-verification-form";
 import { Eye } from "lucide-react";
+import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 
 export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>[] = [
   {
     accessorKey: "reference_code",
-    header: "Reference Code",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Reference Code" />
+    ),
     cell: ({ row }) => (
       <span className="font-mono text-sm">{row.original.reference_code}</span>
     ),
@@ -31,8 +34,11 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
     meta: { headerAlign: "left" },
   },
   {
-    accessorKey: "subscription",
-    header: "Plan Type",
+    id: "subscription.plan_type",
+    accessorFn: (row) => row.subscription?.plan_type,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Plan Type" />
+    ),
     cell: ({ row }) => (
       <Badge variant={row.original.subscription ? "default" : "outline"}>
         {row.original.subscription?.plan_type
@@ -41,11 +47,18 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
           : "N/A"}
       </Badge>
     ),
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true;
+      const planType = row.original.subscription?.plan_type;
+      return value.includes(planType);
+    },
     meta: { headerAlign: "left" },
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Amount" />
+    ),
     cell: ({ row }) => (
       <span className="font-medium">
         {row.original.currency} {row.original.amount}
@@ -55,7 +68,9 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
     cell: ({ row }) => (
       <Badge
         variant={
@@ -70,11 +85,17 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
           row.original.status.slice(1)}
       </Badge>
     ),
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true;
+      return value.includes(row.getValue(id));
+    },
     meta: { headerAlign: "left" },
   },
   {
     accessorKey: "created_at",
-    header: "Date",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Date" />
+    ),
     cell: ({ row }) => {
       const date = new Date(row.original.created_at);
       return date.toLocaleDateString();
@@ -83,7 +104,9 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
   },
   {
     id: "actions",
-    header: "Action",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Actions" />
+    ),
     cell: function ActionsCell({ row }) {
       const [open, setOpen] = useState(false);
       const payment = row.original;
@@ -91,12 +114,11 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
       return (
         <>
           <Button
-            size="sm"
-            variant="outline"
+            size="icon"
+            variant="ghost"
             onClick={() => setOpen(true)}
           >
-            <Eye className="mr-2 h-4 w-4" />
-            {payment.status === "pending" ? "Verify" : "View"}
+            <Eye className="h-4 w-4" />
           </Button>
 
           <PaymentVerificationForm
@@ -107,6 +129,6 @@ export const invoicesPaymentsColumns: CustomColumnDef<PaymentWithRelations, any>
         </>
       );
     },
-    meta: { headerAlign: "left" },
+    meta: { headerAlign: "center", headerWidth: 80 },
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { PaymentWithRelations } from "@/types";
 import { useApprovePayment, useRejectPayment } from "@/hooks/use-payments";
 import FormSheet from "@/components/form-sheet";
@@ -27,6 +27,13 @@ export function PaymentVerificationForm({
 
   const approvePayment = useApprovePayment();
   const rejectPayment = useRejectPayment();
+
+  // Initialize admin notes when payment changes or dialog opens
+  React.useEffect(() => {
+    if (payment && open) {
+      setAdminNotes(payment.admin_notes || "");
+    }
+  }, [payment, open]);
 
   const handleApprove = async () => {
     if (!payment) return;
@@ -70,41 +77,44 @@ export function PaymentVerificationForm({
   if (!payment) return null;
 
   const isLoading = action !== null;
+  const isPending = payment.status === "pending";
 
   const customFooter = (
     <SheetFooter className="flex-row justify-between border-t gap-2">
       <SheetClose asChild>
         <Button variant="outline" disabled={isLoading}>
-          Cancel
+          {isPending ? "Cancel" : "Close"}
         </Button>
       </SheetClose>
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={handleReject}
-          disabled={isLoading}
-        >
-          {action === "reject" ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Rejecting...
-            </>
-          ) : (
-            "Reject"
-          )}
-        </Button>
-        <Button type="button" onClick={handleApprove} disabled={isLoading}>
-          {action === "approve" ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Approving...
-            </>
-          ) : (
-            "Approve"
-          )}
-        </Button>
-      </div>
+      {isPending && (
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleReject}
+            disabled={isLoading}
+          >
+            {action === "reject" ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Rejecting...
+              </>
+            ) : (
+              "Reject"
+            )}
+          </Button>
+          <Button type="button" onClick={handleApprove} disabled={isLoading}>
+            {action === "approve" ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Approving...
+              </>
+            ) : (
+              "Approve"
+            )}
+          </Button>
+        </div>
+      )}
     </SheetFooter>
   );
 
@@ -116,13 +126,12 @@ export function PaymentVerificationForm({
       description="Review the payment details and proof image before approving or rejecting."
       onSubmit={(e) => e.preventDefault()}
       customFooter={customFooter}
-      className="sm:max-w-2xl"
+      className="sm:max-w-xl"
     >
       <div className="space-y-6">
         {/* Payment Details */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">User</p>
             <p className="text-sm">{payment.user?.name || "N/A"}</p>
             <p className="text-xs text-muted-foreground">
               {payment.user?.email || payment.user?.phone || "N/A"}
@@ -150,8 +159,8 @@ export function PaymentVerificationForm({
                 payment.status === "approved"
                   ? "default"
                   : payment.status === "rejected"
-                    ? "destructive"
-                    : "secondary"
+                  ? "destructive"
+                  : "secondary"
               }
             >
               {payment.status}
@@ -185,7 +194,7 @@ export function PaymentVerificationForm({
             <Label>Payment Proof</Label>
             <div className="mt-2 rounded-lg border overflow-hidden">
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "")}/storage/${payment.proof_image}`}
+                src={payment.proof_image}
                 alt="Payment proof"
                 className="w-full h-auto"
               />
@@ -195,21 +204,24 @@ export function PaymentVerificationForm({
 
         {/* Admin Notes */}
         <div>
-          <Label htmlFor="admin-notes">
+          <Label htmlFor="admin_notes">
             Admin Notes{" "}
-            {action === "reject" && (
+            {isPending && action === "reject" && (
               <span className="text-destructive">*</span>
             )}
           </Label>
           <Textarea
-            id="admin-notes"
+            id="admin_notes"
             placeholder={
-              action === "reject"
-                ? "Required: Provide a reason for rejection"
-                : "Optional: Add notes about this payment"
+              isPending
+                ? action === "reject"
+                  ? "Required: Provide a reason for rejection"
+                  : "Optional: Add notes about this payment"
+                : "View admin notes"
             }
             value={adminNotes}
             onChange={(e) => setAdminNotes(e.target.value)}
+            disabled={!isPending}
             rows={3}
             className="mt-2"
           />
