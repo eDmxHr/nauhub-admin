@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import * as tus from "tus-js-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -40,8 +41,11 @@ export function StreamUploader({
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadsRef = useRef<Map<string, XMLHttpRequest>>(new Map());
+  const uploadsRef = useRef<Map<string, XMLHttpRequest | tus.Upload>>(new Map());
   const { addUpload, updateUpload } = useUploadStore();
+  
+  // 200MB threshold for TUS vs basic upload
+  const TUS_THRESHOLD = 200 * 1024 * 1024; // 200MB
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -134,6 +138,9 @@ export function StreamUploader({
         .find((row) => row.startsWith("admin_auth_token="))
         ?.split("=")[1];
 
+      // Determine if we need TUS (files >= 200MB)
+      const useTus = file.size >= TUS_THRESHOLD;
+
       // Request direct upload URL
       const createUrlResponse = await fetch(createUploadUrlEndpoint, {
         method: "POST",
@@ -143,6 +150,8 @@ export function StreamUploader({
         },
         body: JSON.stringify({
           max_duration_seconds: 21600, // 6 hours default
+          use_tus: useTus, // Indicate if TUS is needed
+          file_size: file.size, // Send file size for backend to determine method
         }),
       });
 
@@ -153,119 +162,205 @@ export function StreamUploader({
         );
       }
 
-      const { upload_url, video_uid } = await createUrlResponse.json();
+      const responseData = await createUrlResponse.json();
+      const { upload_url, video_uid, tus_endpoint } = responseData;
 
-      if (!upload_url || !video_uid) {
-        throw new Error("Invalid response: missing upload_url or video_uid");
+      if (!video_uid) {
+        throw new Error("Invalid response: missing video_uid");
       }
 
       // Register upload for tracking in sidebar
       addUpload(video_uid, file.name, file.size);
 
       // Step 2: Upload file directly to Cloudflare
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentage = Math.round((event.loaded / event.total) * 100);
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileId ? { ...f, progress: percentage } : f
-            )
+      // Use TUS for files >= 200MB, basic upload for smaller files
+      if (useTus) {
+        // For TUS, we need tus_endpoint from backend
+        // Basic upload URLs don't support TUS protocol
+        if (!tus_endpoint) {
+          throw new Error(
+            "Large file upload requires TUS protocol. Please ensure your backend supports TUS uploads for files >= 200MB."
           );
-          // Update progress in store
-          updateUpload(video_uid, { progress: percentage });
         }
-      };
 
-      xhr.onload = () => {
-        // Clean up xhr reference
-        uploadsRef.current.delete(fileId);
+        // Use TUS protocol for resumable uploads (files >= 200MB)
+        const tusUpload = new tus.Upload(file, {
+          endpoint: tus_endpoint,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type,
+          },
+          onError: (error) => {
+            console.error("TUS upload error:", error);
+            uploadsRef.current.delete(fileId);
+            
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId
+                  ? {
+                      ...f,
+                      status: "error" as const,
+                      error: error.message || "Upload failed",
+                    }
+                  : f
+              )
+            );
+            
+            updateUpload(video_uid, {
+              state: "error",
+              error: error.message || "Upload failed",
+            });
+            
+            if (onUploadError) {
+              onUploadError(error, uploadedFile);
+            }
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId ? { ...f, progress: percentage } : f
+              )
+            );
+            updateUpload(video_uid, { progress: percentage });
+          },
+          onSuccess: () => {
+            uploadsRef.current.delete(fileId);
+            
+            const completedFile = {
+              ...uploadedFile,
+              status: "completed" as const,
+              progress: 100,
+              uid: video_uid,
+            };
+
+            setFiles((prev) =>
+              prev.map((f) => (f.id === fileId ? completedFile : f))
+            );
+
+            updateUpload(video_uid, {
+              progress: 100,
+              state: "inprogress", // Still processing on Cloudflare side
+            });
+
+            if (onUploadComplete) {
+              onUploadComplete(completedFile);
+            }
+          },
+        });
+
+        // Store tus upload for potential abort
+        uploadsRef.current.set(fileId, tusUpload);
         
-        if (xhr.status === 200 || xhr.status === 201) {
-          const completedFile = {
-            ...uploadedFile,
-            status: "completed" as const,
-            progress: 100,
-            uid: video_uid,
-          };
+        // Start the upload
+        tusUpload.start();
+      } else {
+        // Use basic FormData upload for files < 200MB
+        const formData = new FormData();
+        formData.append("file", file);
 
-          setFiles((prev) =>
-            prev.map((f) => (f.id === fileId ? completedFile : f))
-          );
+        const xhr = new XMLHttpRequest();
 
-          // Update store - upload to Cloudflare is complete, but processing may still be in progress
-          // The polling in upload-progress page will update the final status
-          updateUpload(video_uid, { 
-            progress: 100,
-            state: "inprogress" // Still processing on Cloudflare side
-          });
-
-          if (onUploadComplete) {
-            onUploadComplete(completedFile);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentage = Math.round((event.loaded / event.total) * 100);
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId ? { ...f, progress: percentage } : f
+              )
+            );
+            // Update progress in store
+            updateUpload(video_uid, { progress: percentage });
           }
-        } else {
-          let errorMessage = `Upload failed: ${xhr.status}`;
-          try {
-            const errorData = JSON.parse(xhr.responseText);
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } catch {
-            // Use default error message
-          }
+        };
 
+        xhr.onload = () => {
+          // Clean up xhr reference
+          uploadsRef.current.delete(fileId);
+          
+          if (xhr.status === 200 || xhr.status === 201) {
+            const completedFile = {
+              ...uploadedFile,
+              status: "completed" as const,
+              progress: 100,
+              uid: video_uid,
+            };
+
+            setFiles((prev) =>
+              prev.map((f) => (f.id === fileId ? completedFile : f))
+            );
+
+            // Update store - upload to Cloudflare is complete, but processing may still be in progress
+            // The polling in upload-progress page will update the final status
+            updateUpload(video_uid, { 
+              progress: 100,
+              state: "inprogress" // Still processing on Cloudflare side
+            });
+
+            if (onUploadComplete) {
+              onUploadComplete(completedFile);
+            }
+          } else {
+            let errorMessage = `Upload failed: ${xhr.status}`;
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch {
+              // Use default error message
+            }
+
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId
+                  ? {
+                      ...f,
+                      status: "error" as const,
+                      error: errorMessage,
+                    }
+                  : f
+              )
+            );
+            // Update store with error
+            updateUpload(video_uid, {
+              state: "error",
+              error: errorMessage,
+            });
+            if (onUploadError) {
+              onUploadError(new Error(errorMessage), uploadedFile);
+            }
+          }
+        };
+
+        xhr.onerror = () => {
+          // Clean up xhr reference
+          uploadsRef.current.delete(fileId);
+          
+          const error = new Error("Upload failed");
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
-                ? {
-                    ...f,
-                    status: "error" as const,
-                    error: errorMessage,
-                  }
+                ? { ...f, status: "error" as const, error: error.message }
                 : f
             )
           );
           // Update store with error
           updateUpload(video_uid, {
             state: "error",
-            error: errorMessage,
+            error: error.message,
           });
           if (onUploadError) {
-            onUploadError(new Error(errorMessage), uploadedFile);
+            onUploadError(error, uploadedFile);
           }
-        }
-      };
+        };
 
-      xhr.onerror = () => {
-        // Clean up xhr reference
-        uploadsRef.current.delete(fileId);
+        xhr.open("POST", upload_url);
         
-        const error = new Error("Upload failed");
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? { ...f, status: "error" as const, error: error.message }
-              : f
-          )
-        );
-        // Update store with error
-        updateUpload(video_uid, {
-          state: "error",
-          error: error.message,
-        });
-        if (onUploadError) {
-          onUploadError(error, uploadedFile);
-        }
-      };
-
-      xhr.open("POST", upload_url);
-      
-      // Store xhr for potential abort
-      uploadsRef.current.set(fileId, xhr);
-      
-      xhr.send(formData);
+        // Store xhr for potential abort
+        uploadsRef.current.set(fileId, xhr);
+        
+        xhr.send(formData);
+      }
     } catch (error) {
       console.error("Failed to start upload:", error);
       setFiles((prev) =>
@@ -324,9 +419,13 @@ export function StreamUploader({
   };
 
   const removeFile = (fileId: string) => {
-    const xhr = uploadsRef.current.get(fileId);
-    if (xhr) {
-      xhr.abort();
+    const upload = uploadsRef.current.get(fileId);
+    if (upload) {
+      if (upload instanceof XMLHttpRequest) {
+        upload.abort();
+      } else if (upload instanceof tus.Upload) {
+        upload.abort();
+      }
       uploadsRef.current.delete(fileId);
     }
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
