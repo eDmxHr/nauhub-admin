@@ -7,6 +7,9 @@ import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { Episode } from "@/hooks/use-episodes";
 import { useState, useEffect } from "react";
+import { StreamUploader } from "@/components/stream-uploader";
+import { toast } from "sonner";
+import { videoQualityOptions } from "@/data/qualities";
 
 interface EpisodeFormProps {
   open: boolean;
@@ -23,7 +26,7 @@ export default function EpisodeForm({
   editingEpisode,
   isLoading = false,
 }: EpisodeFormProps) {
-  const [formData, setFormData] = useState<Partial<Episode>>({
+  const [formData, setFormData] = useState<Partial<Episode> & { quality?: string }>({
     episode_number: 1,
     title: "",
     description: "",
@@ -33,11 +36,15 @@ export default function EpisodeForm({
     status: "pending",
     release_date: new Date().toISOString().split("T")[0],
     is_published: false,
+    quality: "",
   });
+  const [uploadedVideoUid, setUploadedVideoUid] = useState<string | undefined>();
+  const [isUploadInProgress, setIsUploadInProgress] = useState(false);
 
   useEffect(() => {
     if (editingEpisode) {
       setFormData(editingEpisode);
+      setUploadedVideoUid(editingEpisode.cloudflare_video_uid);
     } else {
       setFormData({
         episode_number: 1,
@@ -49,12 +56,32 @@ export default function EpisodeForm({
         status: "pending",
         release_date: new Date().toISOString().split("T")[0],
         is_published: false,
+        quality: "",
       });
+      setUploadedVideoUid(undefined);
+      setIsUploadInProgress(false);
     }
   }, [editingEpisode, open]);
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    // Validate that either magnet_url, uploaded video, or upload in progress
+    const hasMagnetUrl = formData.magnet_url && formData.magnet_url.trim() !== "";
+    const hasUploadedVideo = uploadedVideoUid !== undefined;
+    
+    if (!editingEpisode && !hasMagnetUrl && !hasUploadedVideo && !isUploadInProgress) {
+      toast.error("Please provide either a Magnet URL or upload a video file");
+      return;
+    }
+
+    // Include cloudflare_video_uid if file was uploaded (or will be uploaded)
+    const submitData = {
+      ...formData,
+      ...(uploadedVideoUid && { cloudflare_video_uid: uploadedVideoUid }),
+    };
+
+    // Close the modal after submission
+    onSubmit(submitData);
+    onOpenChange(false);
   };
 
   return (
@@ -147,7 +174,7 @@ export default function EpisodeForm({
 
           <div className="space-y-2">
             <Label htmlFor="magnet_url">
-              Magnet URL {!editingEpisode && <span className="text-destructive">*</span>}
+              Magnet URL {!editingEpisode && <span className="text-muted-foreground">(or upload file below)</span>}
             </Label>
             <Input
               id="magnet_url"
@@ -159,12 +186,46 @@ export default function EpisodeForm({
                 })
               }
               placeholder="magnet:?xt=urn:btih:..."
-              required={!editingEpisode}
             />
             <p className="text-xs text-muted-foreground">
               {editingEpisode
                 ? "Leave empty to keep existing video"
-                : "Backend will process the video and assign Cloudflare Video UID"}
+                : "Provide a magnet URL or upload a video file below"}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Or Upload Video File {!editingEpisode && <span className="text-muted-foreground">(or magnet URL above)</span>}
+            </Label>
+            <StreamUploader
+              title={formData.title || ""}
+              description={formData.description || ""}
+              onUploadStart={() => {
+                setIsUploadInProgress(true);
+              }}
+              onUploadComplete={(file) => {
+                setIsUploadInProgress(false);
+                if (file.uid) {
+                  setUploadedVideoUid(file.uid);
+                  toast.success("Video uploaded successfully");
+                }
+              }}
+              onUploadError={(error) => {
+                setIsUploadInProgress(false);
+                toast.error(error.message || "Upload failed");
+                setUploadedVideoUid(undefined);
+              }}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              {uploadedVideoUid 
+                ? `Video uploaded (UID: ${uploadedVideoUid})`
+                : isUploadInProgress
+                ? "Upload in progress... You can submit the form and the upload will continue in the background."
+                : editingEpisode
+                ? "Upload a new video file to replace the existing one"
+                : "Upload a video file directly or provide a magnet URL above"}
             </p>
           </div>
 
@@ -196,6 +257,25 @@ export default function EpisodeForm({
                   setFormData({ ...formData, release_date: e.target.value })
                 }
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quality">Quality</Label>
+              <select
+                id="quality"
+                value={formData.quality || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, quality: e.target.value })
+                }
+                className="w-full h-10 px-3 rounded-md border border-input bg-background"
+              >
+                <option value="">Select quality</option>
+                {videoQualityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

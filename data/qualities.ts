@@ -80,3 +80,15 @@ export const qualities = [
     resolutions: ["720p", "1080p", "4K"],
   },
 ];
+
+// Quality options for video forms
+export const videoQualityOptions = [
+  { value: "1080p", label: "1080p" },
+  { value: "720p", label: "720p" },
+  { value: "480p", label: "480p" },
+  { value: "4k", label: "4k" },
+  { value: "2160p", label: "2160p" },
+  { value: "CAM", label: "CAM" },
+  { value: "HDTS", label: "HDTS" },
+  { value: "TS", label: "TS" },
+];

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import * as tus from "tus-js-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Upload, X, CheckCircle2, AlertCircle, File, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUploadStore } from "@/stores/upload-store";
 
 interface UploadedFile {
   id: string;
@@ -21,45 +21,79 @@ interface UploadedFile {
 interface StreamUploaderProps {
   onUploadComplete?: (file: UploadedFile) => void;
   onUploadError?: (error: Error, file: UploadedFile) => void;
+  onUploadStart?: (file: UploadedFile) => void;
   maxFileSize?: number;
   className?: string;
+  title?: string;
+  description?: string;
 }
 
 export function StreamUploader({
   onUploadComplete,
   onUploadError,
-  maxFileSize = 2 * 1024 * 1024 * 1024, // 2GB default
+  onUploadStart,
+  maxFileSize = 5 * 1024 * 1024 * 1024, // 5GB default
   className,
+  title,
+  description,
 }: StreamUploaderProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadsRef = useRef<Map<string, tus.Upload>>(new Map());
+  const uploadsRef = useRef<Map<string, XMLHttpRequest>>(new Map());
+  const { addUpload, updateUpload } = useUploadStore();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
+  
+    // Cap the display to maxFileSize (5 GB)
+    if (bytes >= maxFileSize) return "5 GB";
+  
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
-
+  
   const validateFile = (file: File): string | null => {
     // Check file size
     if (file.size > maxFileSize) {
       return `File size exceeds maximum of ${formatFileSize(maxFileSize)}`;
     }
 
-    // Check if it's a video file
-    if (!file.type.startsWith("video/")) {
+    // Check if it's a video file by MIME type
+    const isVideoByMimeType = file.type.startsWith("video/");
+    
+    // Fallback: check file extension if MIME type is not available or not recognized
+    const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v", ".3gp", ".ogv"];
+    const fileName = file.name.toLowerCase();
+    const isVideoByExtension = videoExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isVideoByMimeType && !isVideoByExtension) {
       return "Only video files are allowed";
     }
 
     return null;
   };
+  
 
   const uploadFile = async (file: File) => {
     const fileId = `${Date.now()}-${file.name}`;
+
+    // Validate title is provided
+    if (!title || !title.trim()) {
+      const errorFile: UploadedFile = {
+        id: fileId,
+        name: file.name,
+        size: file.size,
+        progress: 0,
+        status: "error",
+        error: "Title is required before uploading",
+      };
+      setFiles((prev) => [...prev, errorFile]);
+      return;
+    }
 
     const validationError = validateFile(file);
     if (validationError) {
@@ -84,30 +118,51 @@ export function StreamUploader({
     };
 
     setFiles((prev) => [...prev, uploadedFile]);
+    
+    if (onUploadStart) {
+      onUploadStart(uploadedFile);
+    }
 
     try {
-      // Get upload URL from our backend
-      const response = await fetch("/api/stream/direct-upload", {
+      // Step 1: Get direct upload URL from backend
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.7:8000/api";
+      const createUploadUrlEndpoint = `${baseURL}/admin/cloudflare/create-direct-upload-url`;
+
+      // Get auth token from cookies
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("admin_auth_token="))
+        ?.split("=")[1];
+
+      // Request direct upload URL
+      const createUrlResponse = await fetch(createUploadUrlEndpoint, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          max_duration_seconds: 21600, // 6 hours default
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Backend error response:", errorData);
+      if (!createUrlResponse.ok) {
+        const errorData = await createUrlResponse.json().catch(() => ({}));
         throw new Error(
-          `Failed to get upload URL: ${response.status} - ${
-            errorData.error || errorData.details || "Unknown error"
-          }`
+          errorData.message || errorData.error || `Failed to create upload URL: ${createUrlResponse.status}`
         );
       }
 
-      const { uploadURL, uid } = await response.json();
+      const { upload_url, video_uid } = await createUrlResponse.json();
 
-      if (!uploadURL) {
-        throw new Error("No upload URL received from server");
+      if (!upload_url || !video_uid) {
+        throw new Error("Invalid response: missing upload_url or video_uid");
       }
 
-      // Upload using FormData (Cloudflare direct upload doesn't support TUS)
+      // Register upload for tracking in sidebar
+      addUpload(video_uid, file.name, file.size);
+
+      // Step 2: Upload file directly to Cloudflare
       const formData = new FormData();
       formData.append("file", file);
 
@@ -121,47 +176,72 @@ export function StreamUploader({
               f.id === fileId ? { ...f, progress: percentage } : f
             )
           );
+          // Update progress in store
+          updateUpload(video_uid, { progress: percentage });
         }
       };
 
       xhr.onload = () => {
-        if (xhr.status === 200) {
+        // Clean up xhr reference
+        uploadsRef.current.delete(fileId);
+        
+        if (xhr.status === 200 || xhr.status === 201) {
           const completedFile = {
             ...uploadedFile,
             status: "completed" as const,
             progress: 100,
-            uid,
+            uid: video_uid,
           };
 
           setFiles((prev) =>
             prev.map((f) => (f.id === fileId ? completedFile : f))
           );
 
+          // Update store - upload to Cloudflare is complete, but processing may still be in progress
+          // The polling in upload-progress page will update the final status
+          updateUpload(video_uid, { 
+            progress: 100,
+            state: "inprogress" // Still processing on Cloudflare side
+          });
+
           if (onUploadComplete) {
             onUploadComplete(completedFile);
           }
         } else {
+          let errorMessage = `Upload failed: ${xhr.status}`;
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            // Use default error message
+          }
+
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
                 ? {
                     ...f,
                     status: "error" as const,
-                    error: `Upload failed: ${xhr.status}`,
+                    error: errorMessage,
                   }
                 : f
             )
           );
+          // Update store with error
+          updateUpload(video_uid, {
+            state: "error",
+            error: errorMessage,
+          });
           if (onUploadError) {
-            onUploadError(
-              new Error(`Upload failed: ${xhr.status}`),
-              uploadedFile
-            );
+            onUploadError(new Error(errorMessage), uploadedFile);
           }
         }
       };
 
       xhr.onerror = () => {
+        // Clean up xhr reference
+        uploadsRef.current.delete(fileId);
+        
         const error = new Error("Upload failed");
         setFiles((prev) =>
           prev.map((f) =>
@@ -170,12 +250,21 @@ export function StreamUploader({
               : f
           )
         );
+        // Update store with error
+        updateUpload(video_uid, {
+          state: "error",
+          error: error.message,
+        });
         if (onUploadError) {
           onUploadError(error, uploadedFile);
         }
       };
 
-      xhr.open("POST", uploadURL);
+      xhr.open("POST", upload_url);
+      
+      // Store xhr for potential abort
+      uploadsRef.current.set(fileId, xhr);
+      
       xhr.send(formData);
     } catch (error) {
       console.error("Failed to start upload:", error);
@@ -235,9 +324,9 @@ export function StreamUploader({
   };
 
   const removeFile = (fileId: string) => {
-    const upload = uploadsRef.current.get(fileId);
-    if (upload) {
-      upload.abort();
+    const xhr = uploadsRef.current.get(fileId);
+    if (xhr) {
+      xhr.abort();
       uploadsRef.current.delete(fileId);
     }
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
@@ -277,7 +366,7 @@ export function StreamUploader({
               Drop video files here or click to browse
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Supports MP4, MOV, AVI and other video formats
+              Supports MP4, MOV, AVI, MKV and other video formats
             </p>
             <p className="text-xs text-gray-400">
               Maximum file size: {formatFileSize(maxFileSize)}
@@ -285,7 +374,7 @@ export function StreamUploader({
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*"
+              accept="video/*,.mkv,.mp4,.mov,.avi,.webm,.flv,.wmv,.m4v,.3gp,.ogv"
               multiple
               className="hidden"
               onChange={handleFileInput}

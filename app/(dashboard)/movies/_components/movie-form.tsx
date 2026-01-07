@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useGenres } from "@/hooks/use-genres";
 import { useCategories } from "@/hooks/use-categories";
 import { movieAgeRatings } from "@/data/age-ratings";
+import { videoQualityOptions } from "@/data/qualities";
 
 interface MovieFormProps {
   open: boolean;
@@ -30,7 +31,7 @@ export function MovieForm({
   const { data: genres = [] } = useGenres();
   const { data: categories = [] } = useCategories();
 
-  const [formData, setFormData] = useState<Partial<Video>>({
+  const [formData, setFormData] = useState<Partial<Video> & { quality?: string }>({
     type: "movie",
     title: "",
     description: "",
@@ -41,6 +42,7 @@ export function MovieForm({
     duration: 0,
     age_rating: "PG-13",
     imdb_rating: 0,
+    quality: "",
     is_published: false,
     is_featured: false,
     is_trending: false,
@@ -73,12 +75,13 @@ export function MovieForm({
         duration: 0,
         age_rating: "PG-13",
         imdb_rating: 0,
+        quality: "",
         is_published: false,
         is_featured: false,
         is_trending: false,
         genre_ids: [],
         category_ids: [],
-      });
+      } as Partial<Video> & { quality?: string });
     }
   }, [editingMovie, open]);
 
@@ -193,7 +196,6 @@ export function MovieForm({
                 setFormData({ ...formData, magnet_url: e.target.value })
               }
               placeholder="magnet:?xt=urn:btih:..."
-              required
             />
           </div>
         </div>
@@ -253,6 +255,26 @@ export function MovieForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="quality">Quality</Label>
+            <select
+              id="quality"
+              value={formData.quality || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, quality: e.target.value })
+              }
+              className="w-full h-10 px-3 rounded-md border border-input bg-background"
+            >
+              <option value="">Select quality</option>
+              {videoQualityOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+          <div className="space-y-2">
             <Label htmlFor="imdb_rating">IMDB Rating</Label>
             <Input
               id="imdb_rating"
@@ -269,7 +291,8 @@ export function MovieForm({
               max={10}
             />
           </div>
-        </div>
+
+         
 
         {/* Genres */}
         <div className="space-y-2">

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Badge } from "@/components/ui/badge";
-import { Star, FileVideo, LoaderIcon } from "lucide-react";
+import { Star, FileVideo } from "lucide-react";
 import Image from "next/image";
 import { truncate } from "@/lib/utils";
 import { useVideo } from "@/hooks/use-videos";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/format-badge-status";
 import { useParams } from "next/navigation";
 import LoadingState from "@/components/loading-state";
+import { VideoUploadForm } from "./_components/video-upload-form";
 
 export default function Page() {
   const [open, setOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function Page() {
   return (
     <>
       <PageHeader breadcrumbs={breadcrumbs} />
+      <VideoUploadForm open={open} onOpenChange={setOpen} />
       <PageWrapper
         title={movie.title}
         description={movieDescription}

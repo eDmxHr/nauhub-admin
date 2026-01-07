@@ -16,6 +16,7 @@ import {
   VideotapeIcon,
   WrenchIcon,
   ActivityIcon,
+  Upload,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -96,6 +97,11 @@ const navigationGroups = {
         title: "Notifications",
         url: "/notifications",
         icon: BellIcon,
+      },
+      {
+        title: "Upload Progress",
+        url: "/upload-progress",
+        icon: Upload,
       },
       {
         title: "Security",
