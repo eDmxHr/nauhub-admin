@@ -175,45 +175,77 @@ export function StreamUploader({
       // Step 2: Upload file directly to Cloudflare
       // Use TUS for files >= 200MB, basic upload for smaller files
       if (useTus) {
-        // For TUS, we need tus_endpoint from backend
-        // Basic upload URLs don't support TUS protocol
+        // For TUS, use tus_endpoint from backend
         if (!tus_endpoint) {
           throw new Error(
-            "Large file upload requires TUS protocol. Please ensure your backend supports TUS uploads for files >= 200MB."
+            "Large file upload requires TUS protocol. Backend should return 'tus_endpoint' for files >= 200MB."
           );
         }
 
         // Use TUS protocol for resumable uploads (files >= 200MB)
+        // The tus-js-client handles chunking, resumability, and retries automatically
+        // Use smaller chunk size (10MB) for better reliability with Cloudflare
+        // Cloudflare recommends 10-20MB chunks
+        const chunkSize = 10 * 1024 * 1024; // 10MB chunks
+        
         const tusUpload = new tus.Upload(file, {
           endpoint: tus_endpoint,
+          chunkSize: chunkSize,
           retryDelays: [0, 3000, 5000, 10000, 20000],
+          removeFingerprintOnSuccess: false, // Keep fingerprint for potential resume
           metadata: {
             filename: file.name,
             filetype: file.type,
           },
+          onBeforeRequest: (req) => {
+            // Log request for debugging
+            console.log(`TUS ${req.getMethod()} to ${req.getURL()}`);
+          },
+          onAfterResponse: (req, res) => {
+            // Log response for debugging
+            console.log(`TUS response: ${res.getStatus()} for ${req.getMethod()} ${req.getURL()}`);
+          },
           onError: (error) => {
             console.error("TUS upload error:", error);
-            uploadsRef.current.delete(fileId);
-            
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileId
-                  ? {
-                      ...f,
-                      status: "error" as const,
-                      error: error.message || "Upload failed",
-                    }
-                  : f
-              )
-            );
-            
-            updateUpload(video_uid, {
-              state: "error",
-              error: error.message || "Upload failed",
+            console.error("Error details:", {
+              message: error.message,
+              error: error,
             });
             
-            if (onUploadError) {
-              onUploadError(error, uploadedFile);
+            // Don't immediately fail - TUS client will retry automatically
+            // Only mark as error if it's a fatal error (403, 404, or explicit abort)
+            const errorAny = error as any;
+            const status = errorAny.originalRequest?.status;
+            const isFatalError = status === 403 || status === 404 || 
+                                 error.message?.toLowerCase().includes("abort");
+            
+            if (isFatalError) {
+              uploadsRef.current.delete(fileId);
+              
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileId
+                    ? {
+                        ...f,
+                        status: "error" as const,
+                        error: error.message || "Upload failed",
+                      }
+                    : f
+                )
+              );
+              
+              updateUpload(video_uid, {
+                state: "error",
+                error: error.message || "Upload failed",
+              });
+              
+              if (onUploadError) {
+                onUploadError(error, uploadedFile);
+              }
+            } else {
+              // Non-fatal error - TUS client will retry automatically
+              // Don't update UI state, let it retry
+              console.log("TUS upload error (will retry):", error.message);
             }
           },
           onProgress: (bytesUploaded, bytesTotal) => {
