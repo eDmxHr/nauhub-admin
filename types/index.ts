@@ -407,3 +407,33 @@ export interface Profile {
   created_at: ISODateTime;
   updated_at: ISODateTime;
 }
+
+/**
+ * Profile summary (for user detail view)
+ */
+export interface ProfileSummary {
+  id: number;
+  user_id: number;
+  name: string;
+  avatar: string | null;
+  has_pin: boolean;
+}
+
+/**
+ * Current subscription summary (for user detail view)
+ */
+export interface CurrentSubscription {
+  id: number;
+  plan_type: 'monthly' | 'annual';
+  end_date: ISODate;
+  days_remaining: number;
+  plan_name: string;
+}
+
+/**
+ * User detail response (from GET /admin/users/:id)
+ */
+export interface UserDetail extends Omit<User, 'password' | 'remember_token'> {
+  profiles: ProfileSummary[];
+  current_subscription: CurrentSubscription | null;
+}

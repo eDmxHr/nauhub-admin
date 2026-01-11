@@ -1,6 +1,5 @@
 "use client";
 
-import { User } from "@/types";
 import { useToggleUserActive } from "@/hooks/use-users";
 import {
   Dialog,
@@ -13,8 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 
+// Minimal user type for this dialog
+interface UserForToggleActive {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  is_active: boolean;
+}
+
 interface UserToggleActiveDialogProps {
-  user: User | null;
+  user: UserForToggleActive | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
