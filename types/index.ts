@@ -1,3 +1,5 @@
+import { Plan } from "@/hooks/use-plans";
+
 // Titles & Related
 export type Movie = {
   title_id: string;
@@ -212,23 +214,15 @@ export type Rating = {
 // COMMON / SHARED TYPES
 // ======================================================
 
-export type ISODate = string;              // YYYY-MM-DD
-export type ISODateTime = string;          // ISO 8601
+export type ISODate = string; // YYYY-MM-DD
+export type ISODateTime = string; // ISO 8601
 
-export type UserRole = 'user' | 'admin';
-export type Currency = 'MVR';
+export type UserRole = "user" | "admin";
+export type Currency = "MVR";
 
-export type SubscriptionStatus =
-  | 'pending'
-  | 'active'
-  | 'expired'
-  | 'cancelled';
+export type SubscriptionStatus = "pending" | "active" | "expired" | "cancelled";
 
-export type PaymentStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected';
-
+export type PaymentStatus = "pending" | "approved" | "rejected";
 
 // ======================================================
 // USER TYPES
@@ -241,12 +235,12 @@ export interface User {
   id: number;
   name: string;
 
-  email: string | null;                    // Nullable (phone-only auth)
+  email: string | null; // Nullable (phone-only auth)
   email_verified_at: ISODateTime | null;
 
-  password: string | null;                 // Nullable (OTP users)
+  password: string | null; // Nullable (OTP users)
 
-  phone: string | null;                    // Unique, 7-digit
+  phone: string | null; // Unique, 7-digit
   phone_verified: boolean;
 
   role: UserRole;
@@ -287,7 +281,6 @@ export interface UserStats {
   phone_verified_users: number;
 }
 
-
 // ======================================================
 // SUBSCRIPTION TYPES
 // ======================================================
@@ -299,15 +292,15 @@ export interface Subscription {
   id: number;
   user_id: number;
 
-  plan_type: 'monthly' | 'annual';
-  amount: string;                          // Decimal string
+  plan_type: "monthly" | "annual";
+  amount: string; // Decimal string
   currency: Currency;
 
   start_date: ISODate;
   end_date: ISODate;
 
   status: SubscriptionStatus;
-  auto_renew: boolean;                     // Reserved for future
+  auto_renew: boolean; // Reserved for future
 
   created_at: ISODateTime;
   updated_at: ISODateTime;
@@ -325,27 +318,26 @@ export interface SubscriptionWithUser extends Subscription {
  */
 export interface SubscriptionPlan {
   id:
-    | 'basic_monthly'
-    | 'basic_annual'
-    | 'standard_monthly'
-    | 'standard_annual'
-    | 'premium_monthly'
-    | 'premium_annual';
+    | "basic_monthly"
+    | "basic_annual"
+    | "standard_monthly"
+    | "standard_annual"
+    | "premium_monthly"
+    | "premium_annual";
 
-  tier: 'basic' | 'standard' | 'premium';
+  tier: "basic" | "standard" | "premium";
   name: string;
-  duration: 'monthly' | 'annual';
+  duration: "monthly" | "annual";
 
   price: number;
   currency: Currency;
   duration_days: number;
 
   popular?: boolean;
-  savings?: string;                        // e.g. "MVR 298"
-  discount_text?: string;                  // e.g. "2 months free"
+  savings?: string; // e.g. "MVR 298"
+  discount_text?: string; // e.g. "2 months free"
   features: string[];
 }
-
 
 // ======================================================
 // PAYMENT TYPES
@@ -359,11 +351,11 @@ export interface Payment {
   user_id: number;
   subscription_id: number | null;
 
-  amount: string;                          // Decimal string
+  amount: string; // Decimal string
   currency: Currency;
 
-  reference_code: string;                  // PAY-XXXXXX
-  proof_image: string | null;              // storage path
+  reference_code: string; // PAY-XXXXXX
+  proof_image: string | null; // storage path
 
   status: PaymentStatus;
 
@@ -384,7 +376,6 @@ export interface PaymentWithRelations extends Payment {
   verifiedBy?: User;
 }
 
-
 // ======================================================
 // PROFILE TYPES
 // ======================================================
@@ -400,7 +391,7 @@ export interface Profile {
   avatar: string | null;
 
   pin_protected: boolean;
-  pin: string | null;                      // Hashed
+  pin: string | null; // Hashed
 
   is_kids_profile: boolean;
 
@@ -424,16 +415,65 @@ export interface ProfileSummary {
  */
 export interface CurrentSubscription {
   id: number;
-  plan_type: 'monthly' | 'annual';
+  plan_type: "monthly" | "annual";
   end_date: ISODate;
   days_remaining: number;
   plan_name: string;
+  plan_details: Plan;
+}
+
+/**
+ * Watch history item (for user detail view)
+ */
+export interface WatchHistoryItem {
+  id: number;
+  user_id: number;
+  profile_id: number;
+  video_id: number;
+  episode_id: number | null;
+  progress_seconds: number;
+  duration_seconds: number;
+  completed: boolean;
+  last_watched_at: ISODateTime;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+  video: {
+    id: number;
+    type: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    banner: string;
+    cloudflare_video_uid: string;
+    status: string;
+    duration: number;
+    quality: string;
+    release_year: number;
+    age_rating: string;
+    imdb_rating: string;
+    is_published: boolean;
+    is_featured: boolean;
+    is_trending: boolean;
+    view_count: number;
+    created_at: ISODateTime;
+    updated_at: ISODateTime;
+  };
+  episode: any | null;
+}
+
+/**
+ * Payment with subscription (for user detail view)
+ */
+export interface PaymentDetail extends Payment {
+  subscription: Subscription | null;
 }
 
 /**
  * User detail response (from GET /admin/users/:id)
  */
-export interface UserDetail extends Omit<User, 'password' | 'remember_token'> {
+export interface UserDetail extends Omit<User, "password" | "remember_token"> {
   profiles: ProfileSummary[];
   current_subscription: CurrentSubscription | null;
+  payments: PaymentDetail[];
+  watch_history: WatchHistoryItem[];
 }

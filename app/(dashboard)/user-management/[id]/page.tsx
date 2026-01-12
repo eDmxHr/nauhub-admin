@@ -22,6 +22,12 @@ import {
   CheckCircle,
   Users,
   Lock,
+  History,
+  Play,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import LoadingState from "@/components/loading-state";
 import { formatDate } from "@/lib/utils";
@@ -65,6 +71,8 @@ export default function UserDetailPage() {
 
   const subscription = user.current_subscription;
   const profiles = user.profiles || [];
+  const payments = user.payments || [];
+  const watchHistory = user.watch_history || [];
 
   return (
     <>
@@ -78,7 +86,7 @@ export default function UserDetailPage() {
         title={user.name}
         description={user.email || user.phone || "User details"}
       >
-        <div className="grid gap-6 max-w-5xl">
+        <div className="grid gap-6">
           {/* User Info & Actions */}
           <div className="grid lg:grid-cols-[1fr_auto] gap-6">
             {/* User Info Card */}
@@ -98,9 +106,7 @@ export default function UserDetailPage() {
                       )}
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </Badge>
-                    <Badge
-                      variant={user.is_active ? "default" : "destructive"}
-                    >
+                    <Badge variant={user.is_active ? "default" : "destructive"}>
                       {user.is_active ? "Active" : "Blocked"}
                     </Badge>
                   </div>
@@ -167,7 +173,9 @@ export default function UserDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Joined</p>
-                      <p className="font-medium">{formatDate(user.created_at)}</p>
+                      <p className="font-medium">
+                        {formatDate(user.created_at)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -227,7 +235,9 @@ export default function UserDetailPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="p-4 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Plan</p>
-                    <p className="font-semibold">{subscription.plan_name}</p>
+                    <p className="font-semibold">
+                      {subscription.plan_details.name}
+                    </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Type</p>
@@ -317,6 +327,172 @@ export default function UserDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Payment History & Watch History Grid */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Payment History Card */}
+            <Card>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Payment History
+                  </CardTitle>
+                  <Badge variant="outline">{payments.length} payments</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {payments.length > 0 ? (
+                  <div className="space-y-3">
+                    {payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="flex items-start justify-between p-4 rounded-lg border bg-card"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-sm">
+                              {payment.reference_code}
+                            </p>
+                            <Badge
+                              variant={
+                                payment.status === "approved"
+                                  ? "default"
+                                  : payment.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {payment.status === "approved" && (
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                              )}
+                              {payment.status === "rejected" && (
+                                <XCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {payment.status === "pending" && (
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {payment.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(payment.created_at)}
+                          </p>
+                          {payment.admin_notes && (
+                            <p className="text-xs text-muted-foreground mt-1 italic">
+                              {payment.admin_notes}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="font-semibold">
+                            {payment.currency} {payment.amount}
+                          </p>
+                          {payment.subscription && (
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {payment.subscription.plan_type}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No payment history</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Watch History Card */}
+            <Card>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Watch History
+                  </CardTitle>
+                  <Badge variant="outline">{watchHistory.length} videos</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {watchHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {watchHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative w-24 h-16 shrink-0 rounded overflow-hidden bg-muted">
+                          {item.video.thumbnail ? (
+                            <img
+                              src={item.video.thumbnail}
+                              alt={item.video.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          {/* Progress indicator */}
+                          {!item.completed && item.progress_seconds > 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
+                              <div
+                                className="h-full bg-primary"
+                                style={{
+                                  width: `${
+                                    (item.progress_seconds /
+                                      item.duration_seconds) *
+                                    100
+                                  }%`,
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {item.video.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {item.video.type}
+                            </Badge>
+                            {item.video.quality && (
+                              <span className="text-xs text-muted-foreground">
+                                {item.video.quality}
+                              </span>
+                            )}
+                            {item.completed && (
+                              <Badge variant="default" className="text-xs">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Completed
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Last watched: {formatDate(item.last_watched_at)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center">
+                    <History className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No watch history</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </PageWrapper>
 
