@@ -407,3 +407,90 @@ export interface Profile {
   created_at: ISODateTime;
   updated_at: ISODateTime;
 }
+
+
+// ======================================================
+// SUPPORT TICKET TYPES
+// ======================================================
+
+export type TicketCategory =
+  | "movie_request"
+  | "series_request"
+  | "technical_issue"
+  | "billing"
+  | "account"
+  | "feedback"
+  | "other";
+
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
+
+export type TicketStatus =
+  | "open"
+  | "pending"
+  | "in_progress"
+  | "awaiting_reply"
+  | "resolved"
+  | "closed";
+
+/**
+ * SupportTicket - Core ticket entity
+ */
+export interface SupportTicket {
+  id: number;
+  ticket_number: string;
+  user_id: number;
+  category: TicketCategory;
+  priority: TicketPriority;
+  subject: string;
+  description: string;
+  attachments: string[];
+  status: TicketStatus;
+  assigned_to: number | null;
+  assigned_at: ISODateTime | null;
+  resolution_notes: string | null;
+  resolved_at: ISODateTime | null;
+  resolved_by: number | null;
+  last_activity_at: ISODateTime;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+/**
+ * SupportTicket with user relation (admin view)
+ */
+export interface SupportTicketWithUser extends SupportTicket {
+  user: User;
+  assignedTo?: User;
+  resolvedBy?: User;
+  replies?: SupportTicketReply[];
+}
+
+/**
+ * SupportTicketReply - Ticket reply/comment
+ */
+export interface SupportTicketReply {
+  id: number;
+  ticket_id: number;
+  user_id: number;
+  message: string;
+  attachments: string[];
+  is_admin_reply: boolean;
+  is_internal_note: boolean;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+  user?: User;
+}
+
+/**
+ * SupportTicketStats - Ticket statistics
+ */
+export interface SupportTicketStats {
+  total: number;
+  open: number;
+  pending: number;
+  in_progress: number;
+  resolved: number;
+  closed: number;
+  by_category: Record<TicketCategory, number>;
+  by_priority: Record<TicketPriority, number>;
+}

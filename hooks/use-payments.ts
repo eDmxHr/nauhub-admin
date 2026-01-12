@@ -91,3 +91,56 @@ export function useRejectPayment() {
     },
   });
 }
+
+// Fetch single payment details
+export function usePayment(id: number) {
+  return useQuery({
+    queryKey: ["payments", id],
+    queryFn: async () => {
+      try {
+        const response = await api.get<{ data: PaymentWithRelations }>(
+          `/admin/payments/${id}`
+        );
+        return response.data.data;
+      } catch (error) {
+        console.error("Error fetching payment:", error);
+        throw error;
+      }
+    },
+    enabled: !!id,
+  });
+}
+
+// Refund payment
+export function useRefundPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      refundAmount,
+      refundType,
+      reason,
+      cancelSubscription = false,
+    }: {
+      id: number;
+      refundAmount: number;
+      refundType: "full" | "partial";
+      reason?: string;
+      cancelSubscription?: boolean;
+    }) => {
+      const response = await api.post(`/admin/payments/${id}/refund`, {
+        refund_amount: refundAmount,
+        refund_type: refundType,
+        reason,
+        cancel_subscription: cancelSubscription,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}

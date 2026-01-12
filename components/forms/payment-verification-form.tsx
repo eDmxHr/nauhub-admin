@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 import { PaymentWithRelations } from "@/types";
 import { useApprovePayment, useRejectPayment } from "@/hooks/use-payments";
+import { PaymentRefundForm } from "./payment-refund-form";
 import FormSheet from "@/components/form-sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { SheetClose, SheetFooter } from "@/components/ui/sheet";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface PaymentVerificationFormProps {
   payment: PaymentWithRelations | null;
@@ -24,6 +25,7 @@ export function PaymentVerificationForm({
 }: PaymentVerificationFormProps) {
   const [adminNotes, setAdminNotes] = useState("");
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
 
   const approvePayment = useApprovePayment();
   const rejectPayment = useRejectPayment();
@@ -78,6 +80,7 @@ export function PaymentVerificationForm({
 
   const isLoading = action !== null;
   const isPending = payment.status === "pending";
+  const isApproved = payment.status === "approved";
 
   const customFooter = (
     <SheetFooter className="flex-row justify-between border-t gap-2">
@@ -114,6 +117,19 @@ export function PaymentVerificationForm({
             )}
           </Button>
         </div>
+      )}
+      {isApproved && (
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={() => {
+            onOpenChange(false);
+            setRefundDialogOpen(true);
+          }}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Process Refund
+        </Button>
       )}
     </SheetFooter>
   );
@@ -227,6 +243,11 @@ export function PaymentVerificationForm({
           />
         </div>
       </div>
+      <PaymentRefundForm
+        payment={payment}
+        open={refundDialogOpen}
+        onOpenChange={setRefundDialogOpen}
+      />
     </FormSheet>
   );
 }
