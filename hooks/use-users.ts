@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import { User, UserWithRelations, UserStats, UserRole } from "@/types";
+import { User, UserDetail, UserStats, UserRole } from "@/types";
 
 // Response types
 interface UsersResponse {
@@ -45,8 +45,8 @@ export function useUser(id: number) {
   return useQuery({
     queryKey: ["users", id],
     queryFn: async () => {
-      const response = await api.get<{ user: UserWithRelations }>(`/admin/users/${id}`);
-      return response.data.user;
+      const response = await api.get<UserDetail>(`/admin/users/${id}`);
+      return response.data;
     },
     enabled: !!id,
   });

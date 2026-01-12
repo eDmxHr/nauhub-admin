@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, UserRole } from "@/types";
+import { UserRole } from "@/types";
 import { useUpdateUserRole } from "@/hooks/use-users";
 import {
   Dialog,
@@ -22,8 +22,17 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Shield } from "lucide-react";
 
+// Minimal user type for this dialog
+interface UserForRoleForm {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role: UserRole;
+}
+
 interface UserRoleFormProps {
-  user: User | null;
+  user: UserForRoleForm | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

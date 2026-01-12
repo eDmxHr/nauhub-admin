@@ -26,7 +26,9 @@ export default function EpisodeForm({
   editingEpisode,
   isLoading = false,
 }: EpisodeFormProps) {
-  const [formData, setFormData] = useState<Partial<Episode> & { quality?: string }>({
+  const [formData, setFormData] = useState<
+    Partial<Episode> & { quality?: string }
+  >({
     episode_number: 1,
     title: "",
     description: "",
@@ -38,7 +40,9 @@ export default function EpisodeForm({
     is_published: false,
     quality: "",
   });
-  const [uploadedVideoUid, setUploadedVideoUid] = useState<string | undefined>();
+  const [uploadedVideoUid, setUploadedVideoUid] = useState<
+    string | undefined
+  >();
   const [isUploadInProgress, setIsUploadInProgress] = useState(false);
 
   useEffect(() => {
@@ -65,10 +69,16 @@ export default function EpisodeForm({
 
   const handleSubmit = () => {
     // Validate that either magnet_url, uploaded video, or upload in progress
-    const hasMagnetUrl = formData.magnet_url && formData.magnet_url.trim() !== "";
+    const hasMagnetUrl =
+      formData.magnet_url && formData.magnet_url.trim() !== "";
     const hasUploadedVideo = uploadedVideoUid !== undefined;
-    
-    if (!editingEpisode && !hasMagnetUrl && !hasUploadedVideo && !isUploadInProgress) {
+
+    if (
+      !editingEpisode &&
+      !hasMagnetUrl &&
+      !hasUploadedVideo &&
+      !isUploadInProgress
+    ) {
       toast.error("Please provide either a Magnet URL or upload a video file");
       return;
     }
@@ -174,7 +184,12 @@ export default function EpisodeForm({
 
           <div className="space-y-2">
             <Label htmlFor="magnet_url">
-              Magnet URL {!editingEpisode && <span className="text-muted-foreground">(or upload file below)</span>}
+              Magnet URL{" "}
+              {!editingEpisode && (
+                <span className="text-muted-foreground">
+                  (or upload file below)
+                </span>
+              )}
             </Label>
             <Input
               id="magnet_url"
@@ -196,7 +211,12 @@ export default function EpisodeForm({
 
           <div className="space-y-2">
             <Label>
-              Or Upload Video File {!editingEpisode && <span className="text-muted-foreground">(or magnet URL above)</span>}
+              Or Upload Video File{" "}
+              {!editingEpisode && (
+                <span className="text-muted-foreground">
+                  (or magnet URL above)
+                </span>
+              )}
             </Label>
             <StreamUploader
               title={formData.title || ""}
@@ -219,7 +239,7 @@ export default function EpisodeForm({
               className="w-full"
             />
             <p className="text-xs text-muted-foreground">
-              {uploadedVideoUid 
+              {uploadedVideoUid
                 ? `Video uploaded (UID: ${uploadedVideoUid})`
                 : isUploadInProgress
                 ? "Upload in progress... You can submit the form and the upload will continue in the background."

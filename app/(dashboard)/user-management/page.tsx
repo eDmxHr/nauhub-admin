@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableFilters } from "@/components/table/data-table-filters";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
@@ -18,6 +19,7 @@ import PageWrapper from "@/components/page-wrapper";
 import { Card } from "@/components/ui/card";
 
 export default function UserManagement() {
+  const router = useRouter();
   const { data: users = [], isLoading } = useUsers();
   const { data: stats } = useUserStats();
 
@@ -145,7 +147,12 @@ export default function UserManagement() {
           filters={filtersConfig}
           showViewOptions={false}
         />
-        <DataTable columns={userColumns} table={table} isLoading={isLoading} />
+        <DataTable
+          columns={userColumns}
+          table={table}
+          isLoading={isLoading}
+          onRowClick={(row) => router.push(`/user-management/${row.original.id}`)}
+        />
         <DataTablePagination table={table} />
       </PageWrapper>
     </>

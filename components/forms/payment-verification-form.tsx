@@ -10,7 +10,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { SheetClose, SheetFooter } from "@/components/ui/sheet";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, ExternalLink, ZoomIn } from "lucide-react";
+
+// Helper to construct full storage URL from relative path
+function getStorageUrl(path: string | null): string | null {
+  if (!path) return null;
+  // If already a full URL, return as-is
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  // Construct full URL using the API base URL
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.7:8000/api"
+  ).replace(/\/api$/, "");
+  return `${baseUrl}/storage/${path}`;
+}
 
 interface PaymentVerificationFormProps {
   payment: PaymentWithRelations | null;
@@ -25,7 +40,7 @@ export function PaymentVerificationForm({
 }: PaymentVerificationFormProps) {
   const [adminNotes, setAdminNotes] = useState("");
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
 
   const approvePayment = useApprovePayment();
   const rejectPayment = useRejectPayment();
@@ -208,13 +223,35 @@ export function PaymentVerificationForm({
         {payment.proof_image && (
           <div>
             <Label>Payment Proof</Label>
-            <div className="mt-2 rounded-lg border overflow-hidden">
-              <img
-                src={payment.proof_image}
-                alt="Payment proof"
-                className="w-full h-auto"
-              />
+            <div className="mt-2 flex items-center gap-2">
+              <div
+                className="relative w-48 h-48 rounded-lg border overflow-hidden cursor-pointer group"
+                onClick={() => setImagePreviewOpen(true)}
+              >
+                <img
+                  src={getStorageUrl(payment.proof_image) || ""}
+                  alt="Payment proof"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ZoomIn className="h-5 w-5 text-white" />
+                </div>
+              </div>
             </div>
+
+            {/* Image Preview Dialog */}
+            <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
+              <DialogContent className="max-w-3xl p-0">
+                <DialogTitle className="sr-only">
+                  Payment Proof Image
+                </DialogTitle>
+                <img
+                  src={getStorageUrl(payment.proof_image) || ""}
+                  alt="Payment proof"
+                  className="w-full h-auto rounded-lg"
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 

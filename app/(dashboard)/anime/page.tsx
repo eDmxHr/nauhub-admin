@@ -6,6 +6,8 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   getPaginationRowModel,
+  ColumnFiltersState,
+  SortingState,
 } from "@tanstack/react-table";
 import { useState, useMemo } from "react";
 import { createAnimeColumns } from "./_components/columns";
@@ -42,12 +44,8 @@ export default function Page() {
 
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState<
-    import("@tanstack/react-table").ColumnFiltersState
-  >([]);
-  const [sorting, setSorting] = useState<
-    import("@tanstack/react-table").SortingState
-  >([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   const handleEditAnime = (anime: Video) => {
