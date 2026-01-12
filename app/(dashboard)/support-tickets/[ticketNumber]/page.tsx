@@ -6,11 +6,23 @@ import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -33,7 +45,14 @@ import {
 import { useUsers } from "@/hooks/use-users";
 import { useAssignTicket } from "@/hooks/use-support-tickets";
 import { toast } from "sonner";
-import { ArrowLeft, MessageSquare, User, Clock, CheckCircle2, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  MessageSquare,
+  User,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 
 const getStatusVariant = (status: string) => {
   switch (status) {
@@ -124,7 +143,10 @@ export default function TicketDetailPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-destructive mb-2">Error</h2>
           <p className="text-muted-foreground">Ticket not found</p>
-          <Button onClick={() => router.push("/support-tickets")} className="mt-4">
+          <Button
+            onClick={() => router.push("/support-tickets")}
+            className="mt-4"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tickets
           </Button>
@@ -228,7 +250,8 @@ export default function TicketDetailPage() {
 
   const replies = ticket.replies || [];
   const sortedReplies = [...replies].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
   return (
@@ -286,7 +309,10 @@ export default function TicketDetailPage() {
                   <Badge variant={getStatusVariant(ticket.status)}>
                     {ticket.status
                       .split("_")
-                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                      .map(
+                        (word: string) =>
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                      )
                       .join(" ")}
                   </Badge>
                   <Badge variant={getPriorityVariant(ticket.priority)}>
@@ -341,7 +367,9 @@ export default function TicketDetailPage() {
                       <SelectContent>
                         <SelectItem value="open">Open</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="awaiting_reply">Awaiting Reply</SelectItem>
+                        <SelectItem value="awaiting_reply">
+                          Awaiting Reply
+                        </SelectItem>
                         <SelectItem value="in_progress">In Progress</SelectItem>
                         <SelectItem value="resolved">Resolved</SelectItem>
                         <SelectItem value="closed">Closed</SelectItem>
@@ -370,7 +398,9 @@ export default function TicketDetailPage() {
                     <Label>Assign To</Label>
                     <Select
                       value={
-                        assignedTo || ticket.assigned_to?.toString() || "unassigned"
+                        assignedTo ||
+                        ticket.assigned_to?.toString() ||
+                        "unassigned"
                       }
                       onValueChange={handleAssign}
                       disabled={assignTicketMutation.isPending}
@@ -381,7 +411,10 @@ export default function TicketDetailPage() {
                       <SelectContent>
                         <SelectItem value="unassigned">Unassigned</SelectItem>
                         {adminUsers.map((admin) => (
-                          <SelectItem key={admin.id} value={admin.id.toString()}>
+                          <SelectItem
+                            key={admin.id}
+                            value={admin.id.toString()}
+                          >
                             {admin.name}
                           </SelectItem>
                         ))}
@@ -411,7 +444,7 @@ export default function TicketDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Original Ticket */}
-              <div className="border-l-4 border-primary pl-4 py-2">
+              <div className="border-l-4 border-primary pl-4 p-2 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
@@ -432,9 +465,9 @@ export default function TicketDetailPage() {
               {sortedReplies.map((reply) => (
                 <div
                   key={reply.id}
-                  className={`border-l-4 pl-4 py-2 ${
+                  className={`border-l-4 pl-4 p-2 rounded-xl ${
                     reply.is_internal_note
-                      ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+                      ? "border-yellow-500 bg-muted dark:bg-yellow-950/20"
                       : "border-blue-500"
                   }`}
                 >
@@ -508,18 +541,17 @@ export default function TicketDetailPage() {
 
       {/* Resolve Ticket Dialog */}
       <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-125">
           <DialogHeader>
             <DialogTitle>Resolve Ticket</DialogTitle>
             <DialogDescription>
-              Please provide resolution notes before resolving this ticket. This information will be visible to the user.
+              Please provide resolution notes before resolving this ticket. This
+              information will be visible to the user.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="resolution-notes">
-                Resolution Notes
-              </Label>
+              <Label htmlFor="resolution-notes">Resolution Notes</Label>
               <Textarea
                 id="resolution-notes"
                 placeholder="Enter resolution notes..."
@@ -543,9 +575,13 @@ export default function TicketDetailPage() {
             </Button>
             <Button
               onClick={handleResolve}
-              disabled={resolveTicketMutation.isPending || !resolutionNotes.trim()}
+              disabled={
+                resolveTicketMutation.isPending || !resolutionNotes.trim()
+              }
             >
-              {resolveTicketMutation.isPending ? "Resolving..." : "Resolve Ticket"}
+              {resolveTicketMutation.isPending
+                ? "Resolving..."
+                : "Resolve Ticket"}
             </Button>
           </DialogFooter>
         </DialogContent>
