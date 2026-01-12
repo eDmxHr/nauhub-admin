@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { SheetClose, SheetFooter } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, ExternalLink, ZoomIn } from "lucide-react";
+import { Loader2, ExternalLink, ZoomIn, RefreshCw } from "lucide-react";
 
 // Helper to construct full storage URL from relative path
 function getStorageUrl(path: string | null): string | null {
@@ -41,6 +41,7 @@ export function PaymentVerificationForm({
   const [adminNotes, setAdminNotes] = useState("");
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
 
   const approvePayment = useApprovePayment();
   const rejectPayment = useRejectPayment();
@@ -138,7 +139,6 @@ export function PaymentVerificationForm({
           type="button"
           variant="destructive"
           onClick={() => {
-            onOpenChange(false);
             setRefundDialogOpen(true);
           }}
         >
