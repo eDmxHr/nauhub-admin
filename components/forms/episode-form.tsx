@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { StreamUploader } from "@/components/stream-uploader";
 import { toast } from "sonner";
 import { videoQualityOptions } from "@/data/qualities";
+import { toDateInputValue } from "@/lib/utils";
 
 interface EpisodeFormProps {
   open: boolean;
@@ -36,7 +37,7 @@ export default function EpisodeForm({
     thumbnail: "",
     magnet_url: "",
     status: "pending",
-    release_date: new Date().toISOString().split("T")[0],
+    release_date: toDateInputValue(),
     is_published: false,
     quality: "",
   });
@@ -47,7 +48,11 @@ export default function EpisodeForm({
 
   useEffect(() => {
     if (editingEpisode) {
-      setFormData(editingEpisode);
+      setFormData({
+        ...editingEpisode,
+        release_date: toDateInputValue(editingEpisode.release_date),
+        status: editingEpisode.status || "pending",
+      });
       setUploadedVideoUid(editingEpisode.cloudflare_video_uid);
     } else {
       setFormData({
@@ -58,7 +63,7 @@ export default function EpisodeForm({
         thumbnail: "",
         magnet_url: "",
         status: "pending",
-        release_date: new Date().toISOString().split("T")[0],
+        release_date: toDateInputValue(),
         is_published: false,
         quality: "",
       });
@@ -242,10 +247,10 @@ export default function EpisodeForm({
               {uploadedVideoUid
                 ? `Video uploaded (UID: ${uploadedVideoUid})`
                 : isUploadInProgress
-                ? "Upload in progress... You can submit the form and the upload will continue in the background."
-                : editingEpisode
-                ? "Upload a new video file to replace the existing one"
-                : "Upload a video file directly or provide a magnet URL above"}
+                  ? "Upload in progress... You can submit the form and the upload will continue in the background."
+                  : editingEpisode
+                    ? "Upload a new video file to replace the existing one"
+                    : "Upload a video file directly or provide a magnet URL above"}
             </p>
           </div>
 

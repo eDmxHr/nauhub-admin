@@ -43,6 +43,7 @@ export function GenreForm({
       onSubmit={onSubmit}
       submitButtonText={editingGenre ? "Update Genre" : "Create Genre"}
       disabled={!formData.name.trim()}
+      className="max-w-xl"
     >
       <div className="space-y-4">
         <div className="space-y-2">

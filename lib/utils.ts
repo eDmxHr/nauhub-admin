@@ -48,3 +48,14 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
+
+/**
+ * Formats a date to YYYY-MM-DD format for HTML date inputs
+ * Returns today's date if input is invalid or not provided
+ */
+export function toDateInputValue(date?: string | Date | null): string {
+  if (!date) return new Date().toISOString().split("T")[0];
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return new Date().toISOString().split("T")[0];
+  return d.toISOString().split("T")[0];
+}

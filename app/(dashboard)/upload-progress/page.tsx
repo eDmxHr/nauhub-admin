@@ -8,19 +8,16 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, CheckCircle2, AlertCircle, Upload } from "lucide-react";
-import { api } from "@/lib/api-client";
 import { formatFileSize } from "@/lib/utils";
 
 export default function UploadProgressPage() {
-  const { updateUpload, removeUpload, getUploads, getActiveUploads } = useUploadStore();
-  const [activeUploads, setActiveUploads] = useState<UploadStatus[]>([]);
+  const { removeUpload } = useUploadStore();
   const [allUploads, setAllUploads] = useState<UploadStatus[]>([]);
 
   // Subscribe to store changes
   useEffect(() => {
     const updateFromStore = () => {
       const store = useUploadStore.getState();
-      setActiveUploads(store.getActiveUploads());
       setAllUploads(store.getUploads());
     };
 
@@ -34,50 +31,6 @@ export default function UploadProgressPage() {
 
     return unsubscribe;
   }, []);
-
-  useEffect(() => {
-    if (activeUploads.length === 0) {
-      return;
-    }
-
-    const pollInterval = setInterval(async () => {
-      const currentActiveUploads = useUploadStore.getState().getActiveUploads();
-      for (const upload of currentActiveUploads) {
-        try {
-          const response = await api.get(
-            `/admin/cloudflare/video/${upload.video_uid}/status`
-          );
-
-          const data = response.data;
-
-          if (data.status) {
-            updateUpload(upload.video_uid, {
-              state: data.status.state === "ready" ? "ready" : "inprogress",
-              ready: data.status.ready || false,
-              progress: data.status.progress || 0,
-              duration: data.status.duration || null,
-              size: data.status.size || upload.size,
-            });
-
-            // If ready, stop polling for this upload after a delay
-            if (data.status.ready) {
-              setTimeout(() => {
-                removeUpload(upload.video_uid);
-              }, 5000); // Remove after 5 seconds of being ready
-            }
-          }
-        } catch (error: any) {
-          console.error(`Error polling status for ${upload.video_uid}:`, error);
-          updateUpload(upload.video_uid, {
-            state: "error",
-            error: error.response?.data?.message || "Failed to check status",
-          });
-        }
-      }
-    }, 3000); // Poll every 3 seconds
-
-    return () => clearInterval(pollInterval);
-  }, [activeUploads.length, updateUpload, removeUpload]);
 
   const breadcrumbs = [{ title: "Upload Progress" }];
 
@@ -109,12 +62,6 @@ export default function UploadProgressPage() {
                       </CardTitle>
                       <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
                         <span>Size: {formatFileSize(upload.size)}</span>
-                        {upload.duration && (
-                          <span>
-                            Duration: {Math.floor(upload.duration / 60)}m{" "}
-                            {upload.duration % 60}s
-                          </span>
-                        )}
                         <span>UID: {upload.video_uid}</span>
                       </div>
                     </div>
@@ -145,8 +92,8 @@ export default function UploadProgressPage() {
                       {upload.state === "ready"
                         ? "Ready"
                         : upload.state === "error"
-                        ? "Error"
-                        : "Processing"}
+                          ? "Error"
+                          : "Processing"}
                     </span>
                   </div>
 
@@ -174,4 +121,3 @@ export default function UploadProgressPage() {
     </>
   );
 }
-

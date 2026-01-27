@@ -45,6 +45,7 @@ export function CategoryForm({
       onSubmit={onSubmit}
       submitButtonText={editingCategory ? "Update Category" : "Create Category"}
       disabled={!formData.name.trim()}
+      className="max-w-xl"
     >
       <div className="space-y-4">
         <div className="space-y-2">

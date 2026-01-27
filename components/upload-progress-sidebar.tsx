@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUploadStore, UploadStatus } from "@/stores/upload-store";
+import { useUploadStore } from "@/stores/upload-store";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -12,68 +11,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { X, CheckCircle2, AlertCircle, Upload } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
 
 export function UploadProgressSidebar() {
-  const { uploads, updateUpload, removeUpload } = useUploadStore();
-  const [activeUploads, setActiveUploads] = useState<UploadStatus[]>([]);
-
-  // Get active uploads from store
-  useEffect(() => {
-    const store = useUploadStore.getState();
-    setActiveUploads(store.getActiveUploads());
-    
-    const unsubscribe = useUploadStore.subscribe((state) => {
-      setActiveUploads(state.getActiveUploads());
-    });
-
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    if (activeUploads.length === 0) {
-      return;
-    }
-
-    const pollInterval = setInterval(async () => {
-      const currentActiveUploads = useUploadStore.getState().getActiveUploads();
-      for (const upload of currentActiveUploads) {
-        try {
-          const response = await api.get(
-            `/admin/cloudflare/video/${upload.video_uid}/status`
-          );
-
-          const data = response.data;
-
-          if (data.status) {
-            updateUpload(upload.video_uid, {
-              state: data.status.state === "ready" ? "ready" : "inprogress",
-              ready: data.status.ready || false,
-              progress: data.status.progress || 0,
-              duration: data.status.duration || null,
-              size: data.status.size || upload.size,
-            });
-
-            // If ready, stop polling for this upload after a delay
-            if (data.status.ready) {
-              setTimeout(() => {
-                removeUpload(upload.video_uid);
-              }, 5000); // Remove after 5 seconds of being ready
-            }
-          }
-        } catch (error: any) {
-          console.error(`Error polling status for ${upload.video_uid}:`, error);
-          updateUpload(upload.video_uid, {
-            state: "error",
-            error: error.response?.data?.message || "Failed to check status",
-          });
-        }
-      }
-    }, 3000); // Poll every 3 seconds
-
-    return () => clearInterval(pollInterval);
-  }, [activeUploads.length, updateUpload, removeUpload]);
+  const { uploads, removeUpload } = useUploadStore();
 
   const allUploads = Array.from(uploads.values());
 
@@ -132,9 +72,7 @@ export function UploadProgressSidebar() {
                 )}
 
                 {upload.state === "ready" && (
-                  <div className="text-xs text-green-600">
-                    Upload complete
-                  </div>
+                  <div className="text-xs text-green-600">Upload complete</div>
                 )}
 
                 {upload.state === "error" && upload.error && (
@@ -148,4 +86,3 @@ export function UploadProgressSidebar() {
     </SidebarGroup>
   );
 }
-
