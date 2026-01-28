@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Upload, X, CheckCircle2, AlertCircle, File, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUploadStore } from "@/stores/upload-store";
+import { api } from "@/lib/api-client";
+import { toast } from "sonner";
 
 interface UploadedFile {
   id: string;
@@ -27,6 +29,8 @@ interface StreamUploaderProps {
   className?: string;
   title?: string;
   description?: string;
+  modelType?: "video" | "episode";
+  modelId?: number;
 }
 
 export function StreamUploader({
@@ -37,29 +41,57 @@ export function StreamUploader({
   className,
   title,
   description,
+  modelType,
+  modelId,
 }: StreamUploaderProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadsRef = useRef<Map<string, XMLHttpRequest | tus.Upload>>(new Map());
+  const uploadsRef = useRef<Map<string, XMLHttpRequest | tus.Upload>>(
+    new Map(),
+  );
   const { addUpload, updateUpload } = useUploadStore();
-  
+
   // 200MB threshold for TUS vs basic upload
   const TUS_THRESHOLD = 200 * 1024 * 1024; // 200MB
 
+  // Notify backend that upload is complete (for TUS uploads)
+  const notifyUploadComplete = async (
+    videoUid: string,
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await api.post("/admin/cloudflare/upload-complete", {
+        video_uid: videoUid,
+        model_type: modelType,
+        model_id: modelId,
+      });
+      const message = response.data?.message || "Upload completed successfully";
+      toast.success(message);
+      return { success: true, message };
+    } catch (error: any) {
+      console.error("Error notifying upload complete:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to complete upload";
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage };
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
-  
+
     // Cap the display to maxFileSize (5 GB)
     if (bytes >= maxFileSize) return "5 GB";
-  
+
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
-  
+
   const validateFile = (file: File): string | null => {
     // Check file size
     if (file.size > maxFileSize) {
@@ -68,19 +100,31 @@ export function StreamUploader({
 
     // Check if it's a video file by MIME type
     const isVideoByMimeType = file.type.startsWith("video/");
-    
+
     // Fallback: check file extension if MIME type is not available or not recognized
-    const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v", ".3gp", ".ogv"];
+    const videoExtensions = [
+      ".mp4",
+      ".mov",
+      ".avi",
+      ".mkv",
+      ".webm",
+      ".flv",
+      ".wmv",
+      ".m4v",
+      ".3gp",
+      ".ogv",
+    ];
     const fileName = file.name.toLowerCase();
-    const isVideoByExtension = videoExtensions.some(ext => fileName.endsWith(ext));
-    
+    const isVideoByExtension = videoExtensions.some((ext) =>
+      fileName.endsWith(ext),
+    );
+
     if (!isVideoByMimeType && !isVideoByExtension) {
       return "Only video files are allowed";
     }
 
     return null;
   };
-  
 
   const uploadFile = async (file: File) => {
     const fileId = `${Date.now()}-${file.name}`;
@@ -122,14 +166,15 @@ export function StreamUploader({
     };
 
     setFiles((prev) => [...prev, uploadedFile]);
-    
+
     if (onUploadStart) {
       onUploadStart(uploadedFile);
     }
 
     try {
       // Step 1: Get direct upload URL from backend
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.7:8000/api";
+      const baseURL =
+        process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.7:8000/api";
       const createUploadUrlEndpoint = `${baseURL}/admin/cloudflare/create-direct-upload-url`;
 
       // Get auth token from cookies
@@ -152,13 +197,16 @@ export function StreamUploader({
           max_duration_seconds: 21600, // 6 hours default
           use_tus: useTus, // Indicate if TUS is needed
           file_size: file.size, // Send file size for backend to determine method
+          title: title, // Pass title for file uploads
         }),
       });
 
       if (!createUrlResponse.ok) {
         const errorData = await createUrlResponse.json().catch(() => ({}));
         throw new Error(
-          errorData.message || errorData.error || `Failed to create upload URL: ${createUrlResponse.status}`
+          errorData.message ||
+            errorData.error ||
+            `Failed to create upload URL: ${createUrlResponse.status}`,
         );
       }
 
@@ -178,7 +226,7 @@ export function StreamUploader({
         // For TUS, use tus_endpoint from backend
         if (!tus_endpoint) {
           throw new Error(
-            "Large file upload requires TUS protocol. Backend should return 'tus_endpoint' for files >= 200MB."
+            "Large file upload requires TUS protocol. Backend should return 'tus_endpoint' for files >= 200MB.",
           );
         }
 
@@ -187,7 +235,7 @@ export function StreamUploader({
         // Use smaller chunk size (10MB) for better reliability with Cloudflare
         // Cloudflare recommends 10-20MB chunks
         const chunkSize = 10 * 1024 * 1024; // 10MB chunks
-        
+
         const tusUpload = new tus.Upload(file, {
           endpoint: tus_endpoint,
           chunkSize: chunkSize,
@@ -203,7 +251,9 @@ export function StreamUploader({
           },
           onAfterResponse: (req, res) => {
             // Log response for debugging
-            console.log(`TUS response: ${res.getStatus()} for ${req.getMethod()} ${req.getURL()}`);
+            console.log(
+              `TUS response: ${res.getStatus()} for ${req.getMethod()} ${req.getURL()}`,
+            );
           },
           onError: (error) => {
             console.error("TUS upload error:", error);
@@ -211,17 +261,19 @@ export function StreamUploader({
               message: error.message,
               error: error,
             });
-            
+
             // Don't immediately fail - TUS client will retry automatically
             // Only mark as error if it's a fatal error (403, 404, or explicit abort)
             const errorAny = error as any;
             const status = errorAny.originalRequest?.status;
-            const isFatalError = status === 403 || status === 404 || 
-                                 error.message?.toLowerCase().includes("abort");
-            
+            const isFatalError =
+              status === 403 ||
+              status === 404 ||
+              error.message?.toLowerCase().includes("abort");
+
             if (isFatalError) {
               uploadsRef.current.delete(fileId);
-              
+
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === fileId
@@ -230,15 +282,17 @@ export function StreamUploader({
                         status: "error" as const,
                         error: error.message || "Upload failed",
                       }
-                    : f
-                )
+                    : f,
+                ),
               );
-              
+
               updateUpload(video_uid, {
                 state: "error",
                 error: error.message || "Upload failed",
               });
-              
+
+              toast.error(error.message || "Upload failed");
+
               if (onUploadError) {
                 onUploadError(error, uploadedFile);
               }
@@ -252,14 +306,14 @@ export function StreamUploader({
             const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
             setFiles((prev) =>
               prev.map((f) =>
-                f.id === fileId ? { ...f, progress: percentage } : f
-              )
+                f.id === fileId ? { ...f, progress: percentage } : f,
+              ),
             );
             updateUpload(video_uid, { progress: percentage });
           },
           onSuccess: () => {
             uploadsRef.current.delete(fileId);
-            
+
             const completedFile = {
               ...uploadedFile,
               status: "completed" as const,
@@ -268,13 +322,23 @@ export function StreamUploader({
             };
 
             setFiles((prev) =>
-              prev.map((f) => (f.id === fileId ? completedFile : f))
+              prev.map((f) => (f.id === fileId ? completedFile : f)),
             );
 
             updateUpload(video_uid, {
               progress: 100,
               state: "inprogress", // Still processing on Cloudflare side
             });
+
+            // Only notify upload-complete if modelId is provided (editing existing record)
+            // For new records, the parent will call upload-complete after creating the record
+            if (modelId) {
+              notifyUploadComplete(video_uid);
+            } else {
+              // For new records, just show a simple upload complete toast
+              toast.success("File uploaded to Cloudflare successfully");
+              notifyUploadComplete(video_uid);
+            }
 
             if (onUploadComplete) {
               onUploadComplete(completedFile);
@@ -284,7 +348,7 @@ export function StreamUploader({
 
         // Store tus upload for potential abort
         uploadsRef.current.set(fileId, tusUpload);
-        
+
         // Start the upload
         tusUpload.start();
       } else {
@@ -299,8 +363,8 @@ export function StreamUploader({
             const percentage = Math.round((event.loaded / event.total) * 100);
             setFiles((prev) =>
               prev.map((f) =>
-                f.id === fileId ? { ...f, progress: percentage } : f
-              )
+                f.id === fileId ? { ...f, progress: percentage } : f,
+              ),
             );
             // Update progress in store
             updateUpload(video_uid, { progress: percentage });
@@ -310,7 +374,7 @@ export function StreamUploader({
         xhr.onload = () => {
           // Clean up xhr reference
           uploadsRef.current.delete(fileId);
-          
+
           if (xhr.status === 200 || xhr.status === 201) {
             const completedFile = {
               ...uploadedFile,
@@ -320,14 +384,14 @@ export function StreamUploader({
             };
 
             setFiles((prev) =>
-              prev.map((f) => (f.id === fileId ? completedFile : f))
+              prev.map((f) => (f.id === fileId ? completedFile : f)),
             );
 
             // Update store - upload to Cloudflare is complete, but processing may still be in progress
             // The polling in upload-progress page will update the final status
-            updateUpload(video_uid, { 
+            updateUpload(video_uid, {
               progress: 100,
-              state: "inprogress" // Still processing on Cloudflare side
+              state: "inprogress", // Still processing on Cloudflare side
             });
 
             if (onUploadComplete) {
@@ -337,7 +401,8 @@ export function StreamUploader({
             let errorMessage = `Upload failed: ${xhr.status}`;
             try {
               const errorData = JSON.parse(xhr.responseText);
-              errorMessage = errorData.message || errorData.error || errorMessage;
+              errorMessage =
+                errorData.message || errorData.error || errorMessage;
             } catch {
               // Use default error message
             }
@@ -350,8 +415,8 @@ export function StreamUploader({
                       status: "error" as const,
                       error: errorMessage,
                     }
-                  : f
-              )
+                  : f,
+              ),
             );
             // Update store with error
             updateUpload(video_uid, {
@@ -367,14 +432,14 @@ export function StreamUploader({
         xhr.onerror = () => {
           // Clean up xhr reference
           uploadsRef.current.delete(fileId);
-          
+
           const error = new Error("Upload failed");
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
                 ? { ...f, status: "error" as const, error: error.message }
-                : f
-            )
+                : f,
+            ),
           );
           // Update store with error
           updateUpload(video_uid, {
@@ -387,25 +452,28 @@ export function StreamUploader({
         };
 
         xhr.open("POST", upload_url);
-        
+
         // Store xhr for potential abort
         uploadsRef.current.set(fileId, xhr);
-        
+
         xhr.send(formData);
       }
     } catch (error) {
       console.error("Failed to start upload:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
             ? {
                 ...f,
                 status: "error" as const,
-                error: error instanceof Error ? error.message : "Upload failed",
+                error: errorMessage,
               }
-            : f
-        )
+            : f,
+        ),
       );
+      toast.error(errorMessage);
       if (onUploadError && error instanceof Error) {
         onUploadError(error, uploadedFile);
       }
@@ -469,7 +537,7 @@ export function StreamUploader({
       // Find the original file and retry
       // Note: In a real implementation, you might want to store the original File object
       console.log(
-        "Retry not implemented - would need to store original File object"
+        "Retry not implemented - would need to store original File object",
       );
     }
   };
@@ -484,7 +552,7 @@ export function StreamUploader({
               "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
               isDragging
                 ? "border-primary bg-primary/10"
-                : "border-gray-300 hover:border-gray-400"
+                : "border-gray-300 hover:border-gray-400",
             )}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}

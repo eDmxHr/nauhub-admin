@@ -49,7 +49,7 @@ export default function Page() {
   return (
     <>
       <PageHeader breadcrumbs={breadcrumbs} />
-      <VideoUploadForm open={open} onOpenChange={setOpen} />
+      <VideoUploadForm open={open} onOpenChange={setOpen} videoId={movieId} />
       <PageWrapper
         title={movie.title}
         description={movieDescription}

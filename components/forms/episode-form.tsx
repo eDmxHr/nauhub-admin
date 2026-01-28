@@ -226,6 +226,8 @@ export default function EpisodeForm({
             <StreamUploader
               title={formData.title || ""}
               description={formData.description || ""}
+              modelType="episode"
+              modelId={editingEpisode?.id ? Number(editingEpisode.id) : undefined}
               onUploadStart={() => {
                 setIsUploadInProgress(true);
               }}
@@ -233,7 +235,6 @@ export default function EpisodeForm({
                 setIsUploadInProgress(false);
                 if (file.uid) {
                   setUploadedVideoUid(file.uid);
-                  toast.success("Video uploaded successfully");
                 }
               }}
               onUploadError={(error) => {

@@ -1,36 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { UploadStatus, useUploadStore } from "@/stores/upload-store";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, CheckCircle2, AlertCircle, Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { formatFileSize } from "@/lib/utils";
+import { useActiveUploadJobs } from "@/hooks/use-upload-jobs";
+import { getUploadJobStatusIcon } from "@/lib/upload-job-status";
 
 export default function UploadProgressPage() {
-  const { removeUpload } = useUploadStore();
-  const [allUploads, setAllUploads] = useState<UploadStatus[]>([]);
-
-  // Subscribe to store changes
-  useEffect(() => {
-    const updateFromStore = () => {
-      const store = useUploadStore.getState();
-      setAllUploads(store.getUploads());
-    };
-
-    // Initial load
-    updateFromStore();
-
-    // Subscribe to changes
-    const unsubscribe = useUploadStore.subscribe(() => {
-      updateFromStore();
-    });
-
-    return unsubscribe;
-  }, []);
+  const { data: uploadJobs = [], isLoading } = useActiveUploadJobs();
 
   const breadcrumbs = [{ title: "Upload Progress" }];
 
@@ -41,7 +21,14 @@ export default function UploadProgressPage() {
         title="Upload Progress"
         description="Track the progress of your video uploads"
       >
-        {allUploads.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+              <p className="text-muted-foreground">Loading upload jobs...</p>
+            </CardContent>
+          </Card>
+        ) : uploadJobs.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Upload className="h-12 w-12 text-muted-foreground mb-4" />
@@ -52,64 +39,48 @@ export default function UploadProgressPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {allUploads.map((upload) => (
-              <Card key={upload.video_uid}>
+            {uploadJobs.map((job) => (
+              <Card key={job.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg truncate">
-                        {upload.fileName}
+                        {job.title}
                       </CardTitle>
                       <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                        <span>Size: {formatFileSize(upload.size)}</span>
-                        <span>UID: {upload.video_uid}</span>
+                        <span>
+                          {formatFileSize(job.bytes_transferred)} /{" "}
+                          {formatFileSize(job.bytes_total)}
+                        </span>
+                        <span className="capitalize">{job.upload_method}</span>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeUpload(upload.video_uid)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
-                    {upload.state === "ready" && (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    )}
-                    {upload.state === "error" && (
-                      <AlertCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    {upload.state === "inprogress" && (
-                      <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    )}
+                    {getUploadJobStatusIcon(job.status)}
                     <span className="text-sm font-medium">
-                      {upload.progress}%
+                      {job.progress_percent}%
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {upload.state === "ready"
-                        ? "Ready"
-                        : upload.state === "error"
-                          ? "Error"
-                          : "Processing"}
+                      {job.phase_label}
                     </span>
                   </div>
 
-                  {upload.state === "inprogress" && (
-                    <Progress value={upload.progress} className="h-2" />
+                  {job.status !== "completed" && job.status !== "error" && (
+                    <Progress value={job.progress_percent} className="h-2" />
                   )}
 
-                  {upload.state === "ready" && (
-                    <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
+                  {job.status === "completed" && (
+                    <div className="text-sm text-green-600 bg-green-50 dark:bg-green-950 p-3 rounded-md">
                       Upload and processing completed successfully!
                     </div>
                   )}
 
-                  {upload.state === "error" && upload.error && (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                      {upload.error}
+                  {job.status === "error" && (
+                    <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950 p-3 rounded-md">
+                      {job.phase_label}
                     </div>
                   )}
                 </CardContent>

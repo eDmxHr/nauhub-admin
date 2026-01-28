@@ -11,9 +11,10 @@ import { toast } from "sonner";
 interface VideoUploadFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  videoId?: number;
 }
 
-export function VideoUploadForm({ open, onOpenChange }: VideoUploadFormProps) {
+export function VideoUploadForm({ open, onOpenChange, videoId }: VideoUploadFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -35,9 +36,9 @@ export function VideoUploadForm({ open, onOpenChange }: VideoUploadFormProps) {
     setIsUploading(true);
   };
 
-  const handleUploadComplete = (file: any) => {
+  const handleUploadComplete = async () => {
     setIsUploading(false);
-    toast.success("Video uploaded successfully");
+    // Toast is handled by StreamUploader through notifyUploadComplete
     // Reset form
     setTitle("");
     setDescription("");
@@ -104,6 +105,8 @@ export function VideoUploadForm({ open, onOpenChange }: VideoUploadFormProps) {
             key={uploaderKey}
             title={title}
             description={description}
+            modelType="video"
+            modelId={videoId}
             onUploadStart={handleUploadStart}
             onUploadComplete={handleUploadComplete}
             onUploadError={handleUploadError}

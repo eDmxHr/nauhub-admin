@@ -21,6 +21,8 @@ import {
   useDeleteEpisode,
   Episode,
 } from "@/hooks/use-episodes";
+import { api } from "@/lib/api-client";
+import { toast } from "sonner";
 import SeasonForm from "@/components/forms/season-form";
 import EpisodeForm from "@/components/forms/episode-form";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -88,16 +90,19 @@ export default function AnimeDetailPage() {
           id: editingSeason.id,
           data,
         });
+        toast.success("Season updated successfully");
       } else {
         await createSeasonMutation.mutateAsync({
           videoId: animeId,
           data,
         });
+        toast.success("Season created successfully");
       }
       setSeasonDialogOpen(false);
       setEditingSeason(null);
     } catch (error: any) {
       console.error("Failed to save season:", error);
+      toast.error(error?.message || "Failed to save season");
     }
   };
 
@@ -111,11 +116,13 @@ export default function AnimeDetailPage() {
     if (!deleteSeasonId) return;
     try {
       await deleteSeasonMutation.mutateAsync(deleteSeasonId);
+      toast.success("Season deleted successfully");
       setDeleteSeasonDialogOpen(false);
       setDeleteSeasonId(null);
       setDeleteSeasonTitle("");
     } catch (error: any) {
       console.error("Failed to delete season:", error);
+      toast.error(error?.message || "Failed to delete season");
     }
   };
 
@@ -139,17 +146,35 @@ export default function AnimeDetailPage() {
           id: editingEpisode.id,
           data,
         });
+        toast.success("Episode updated successfully");
       } else if (selectedSeasonId) {
-        await createEpisodeMutation.mutateAsync({
+        const newEpisode = await createEpisodeMutation.mutateAsync({
           seasonId: selectedSeasonId,
           data,
         });
+
+        // If a video was uploaded, notify backend to associate it with the new episode
+        if (data.cloudflare_video_uid && newEpisode?.id) {
+          try {
+            await api.post("/admin/cloudflare/upload-complete", {
+              video_uid: data.cloudflare_video_uid,
+              model_type: "episode",
+              model_id: Number(newEpisode.id),
+            });
+          } catch (error: any) {
+            console.error("Failed to notify upload complete:", error);
+            const errorMessage = error?.response?.data?.message || error?.message || "Failed to register video upload";
+            toast.error(errorMessage);
+          }
+        }
+        toast.success("Episode created successfully");
       }
       setEpisodeDialogOpen(false);
       setEditingEpisode(null);
       setSelectedSeasonId(null);
     } catch (error: any) {
       console.error("Failed to save episode:", error);
+      toast.error(error?.message || "Failed to save episode");
     }
   };
 
@@ -163,11 +188,13 @@ export default function AnimeDetailPage() {
     if (!deleteEpisodeId) return;
     try {
       await deleteEpisodeMutation.mutateAsync(deleteEpisodeId);
+      toast.success("Episode deleted successfully");
       setDeleteEpisodeDialogOpen(false);
       setDeleteEpisodeId(null);
       setDeleteEpisodeTitle("");
     } catch (error: any) {
       console.error("Failed to delete episode:", error);
+      toast.error(error?.message || "Failed to delete episode");
     }
   };
 

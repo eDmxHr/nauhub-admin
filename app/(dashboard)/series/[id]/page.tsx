@@ -21,6 +21,8 @@ import {
   useDeleteEpisode,
   Episode,
 } from "@/hooks/use-episodes";
+import { api } from "@/lib/api-client";
+import { toast } from "sonner";
 import SeasonForm from "@/components/forms/season-form";
 import EpisodeForm from "@/components/forms/episode-form";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -30,7 +32,7 @@ import {
   formatBadgeStatusText,
   formatBadgeStatusVariant,
 } from "@/lib/format-badge-status";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 export default function SeriesDetailPage() {
   const params = useParams();
@@ -54,7 +56,7 @@ export default function SeriesDetailPage() {
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [deleteSeasonDialogOpen, setDeleteSeasonDialogOpen] = useState(false);
   const [deleteSeasonId, setDeleteSeasonId] = useState<string | number | null>(
-    null
+    null,
   );
   const [deleteSeasonTitle, setDeleteSeasonTitle] = useState("");
 
@@ -88,16 +90,19 @@ export default function SeriesDetailPage() {
           id: editingSeason.id,
           data,
         });
+        toast.success("Season updated successfully");
       } else {
         await createSeasonMutation.mutateAsync({
           videoId: seriesId,
           data,
         });
+        toast.success("Season created successfully");
       }
       setSeasonDialogOpen(false);
       setEditingSeason(null);
     } catch (error: any) {
       console.error("Failed to save season:", error);
+      toast.error(error?.message || "Failed to save season");
     }
   };
 
@@ -111,11 +116,13 @@ export default function SeriesDetailPage() {
     if (!deleteSeasonId) return;
     try {
       await deleteSeasonMutation.mutateAsync(deleteSeasonId);
+      toast.success("Season deleted successfully");
       setDeleteSeasonDialogOpen(false);
       setDeleteSeasonId(null);
       setDeleteSeasonTitle("");
     } catch (error: any) {
       console.error("Failed to delete season:", error);
+      toast.error(error?.message || "Failed to delete season");
     }
   };
 
@@ -139,17 +146,35 @@ export default function SeriesDetailPage() {
           id: editingEpisode.id,
           data,
         });
+        toast.success("Episode updated successfully");
       } else if (selectedSeasonId) {
-        await createEpisodeMutation.mutateAsync({
+        const newEpisode = await createEpisodeMutation.mutateAsync({
           seasonId: selectedSeasonId,
           data,
         });
+
+        // If a video was uploaded, notify backend to associate it with the new episode
+        if (data.cloudflare_video_uid && newEpisode?.id) {
+          try {
+            await api.post("/admin/cloudflare/upload-complete", {
+              video_uid: data.cloudflare_video_uid,
+              model_type: "episode",
+              model_id: Number(newEpisode.id),
+            });
+          } catch (error: any) {
+            console.error("Failed to notify upload complete:", error);
+            const errorMessage = error?.response?.data?.message || error?.message || "Failed to register video upload";
+            toast.error(errorMessage);
+          }
+        }
+        toast.success("Episode created successfully");
       }
       setEpisodeDialogOpen(false);
       setEditingEpisode(null);
       setSelectedSeasonId(null);
     } catch (error: any) {
       console.error("Failed to save episode:", error);
+      toast.error(error?.message || "Failed to save episode");
     }
   };
 
@@ -163,11 +188,13 @@ export default function SeriesDetailPage() {
     if (!deleteEpisodeId) return;
     try {
       await deleteEpisodeMutation.mutateAsync(deleteEpisodeId);
+      toast.success("Episode deleted successfully");
       setDeleteEpisodeDialogOpen(false);
       setDeleteEpisodeId(null);
       setDeleteEpisodeTitle("");
     } catch (error: any) {
       console.error("Failed to delete episode:", error);
+      toast.error(error?.message || "Failed to delete episode");
     }
   };
 
@@ -363,70 +390,66 @@ export default function SeriesDetailPage() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {season.episodes.map((episode: any) => (
-                            <Card key={episode.id}>
-                              <CardContent className="py-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4 flex-1">
-                                    <div className="flex items-center justify-center w-12 h-12 rounded-md bg-muted">
-                                      <PlayCircle className="h-6 w-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-medium">
-                                          Episode {episode.episode_number}:{" "}
-                                          {episode.title}
-                                        </h4>
-                                        <Badge
-                                          variant={formatBadgeStatusVariant(
-                                            episode.status
-                                          )}
-                                          className="text-xs"
-                                        >
-                                          {formatBadgeStatusText(
-                                            episode.status
-                                          )}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        {episode.description}
-                                      </p>
-                                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                        {episode.duration && (
-                                          <span>{episode.duration} min</span>
-                                        )}
-                                        {episode.release_date && (
-                                          <span>{formatDate(episode.release_date)}</span>
-                                        )}
-                                        {episode.view_count !== undefined && (
-                                          <span>
-                                            {episode.view_count} views
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
+                          {season.episodes.map((episode: any, idx: number) => (
+                            <div
+                              key={episode.id}
+                              className={cn(
+                                "flex items-center justify-between pb-2",
+                                idx !== season.episodes.length - 1 &&
+                                  "border-b",
+                              )}
+                            >
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium">
+                                      Episode {episode.episode_number}:{" "}
+                                      {episode.title}
+                                    </h4>
+                                    <Badge
+                                      variant={formatBadgeStatusVariant(
+                                        episode.status,
+                                      )}
+                                      className="text-xs"
+                                    >
+                                      {formatBadgeStatusText(episode.status)}
+                                    </Badge>
                                   </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleEditEpisode(episode)}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() =>
-                                        handleDeleteEpisode(episode)
-                                      }
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {episode.description}
+                                  </p>
+                                  <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                                    {episode.duration && (
+                                      <span>{episode.duration} min</span>
+                                    )}
+                                    {episode.release_date && (
+                                      <span>
+                                        {formatDate(episode.release_date)}
+                                      </span>
+                                    )}
+                                    {episode.view_count !== undefined && (
+                                      <span>{episode.view_count} views</span>
+                                    )}
                                   </div>
                                 </div>
-                              </CardContent>
-                            </Card>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditEpisode(episode)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteEpisode(episode)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}

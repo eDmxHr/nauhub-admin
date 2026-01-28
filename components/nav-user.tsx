@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronsUpDown,
-  LogOut,
-  MoonIcon,
-  SunIcon,
-  UserIcon,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,6 +51,7 @@ export function NavUser() {
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              suppressHydrationWarning
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
