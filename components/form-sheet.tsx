@@ -9,7 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { LoaderCircleIcon } from "lucide-react";
+import { LoaderCircleIcon } from "@/lib/icons";
 import { ReactNode } from "react";
 
 export interface FormSheetProps {

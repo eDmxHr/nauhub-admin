@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "@/lib/icons";
 import { useUserStore } from "@/stores/user-store";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -80,8 +80,8 @@ export default function LoginPage() {
             </p>
 
             <div className="mt-3 flex items-center gap-3">
-              <div className="h-[3px] w-14 bg-white/90" />
-              <div className="h-[3px] w-6 bg-[#f15025]" />
+              <div className="h-0.75 w-14 bg-white/90" />
+              <div className="h-0.75 w-6 bg-[#f15025]" />
             </div>
           </div>
 
@@ -92,7 +92,7 @@ export default function LoginPage() {
               <br />
               <span className="relative inline-block">
                 <span className="text-white">Streaming</span>
-                <span className="absolute left-0 -bottom-1 h-[3px] w-full bg-[#f15025]" />
+                <span className="absolute left-0 -bottom-1 h-0.75 w-full bg-[#f15025]" />
               </span>
               <br />
               Universe
@@ -133,7 +133,7 @@ export default function LoginPage() {
 
           {/* Welcome Section */}
           <div className="space-y-2">
-            <h2 className="text-4xl font-serif">Welcome Back</h2>
+            <h2 className="text-4xl font-serif text-center">Welcome Back</h2>
             <p className="text-gray-600">
               Enter your email and password to access your account
             </p>

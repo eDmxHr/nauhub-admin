@@ -1,7 +1,7 @@
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { CustomColumnDef } from "@/types/data-table-columndef";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/lib/icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

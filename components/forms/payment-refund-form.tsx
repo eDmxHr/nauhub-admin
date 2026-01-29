@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SheetClose, SheetFooter } from "@/components/ui/sheet";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 
 interface PaymentRefundFormProps {

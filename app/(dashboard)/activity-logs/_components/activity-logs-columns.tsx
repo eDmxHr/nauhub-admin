@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CustomColumnDef } from "@/types/data-table-columndef";
 import { ActivityLog } from "@/hooks/use-activity-logs";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
-import { Eye } from "lucide-react";
+import { Eye } from "@/lib/icons";
 import { useState } from "react";
 import {
   Sheet,

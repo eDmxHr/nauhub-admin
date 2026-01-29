@@ -52,7 +52,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 
 const getStatusVariant = (status: string) => {
   switch (status) {

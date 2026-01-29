@@ -12,7 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Shield, Ban, CheckCircle } from "lucide-react";
+import { MoreHorizontal, Shield, Ban, CheckCircle } from "@/lib/icons";
 import { UserRoleForm } from "@/components/dialogs/user-role-form";
 import { UserToggleActiveDialog } from "@/components/dialogs/user-toggle-active-dialog";
 import { formatDate } from "@/lib/utils";

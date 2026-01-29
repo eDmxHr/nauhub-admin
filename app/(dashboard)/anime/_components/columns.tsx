@@ -1,6 +1,6 @@
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/lib/icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -17,7 +17,7 @@ import {
   WrenchIcon,
   ActivityIcon,
   Upload,
-} from "lucide-react";
+} from "@/lib/icons";
 
 import { NavUser } from "@/components/nav-user";
 import {

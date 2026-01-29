@@ -4,7 +4,7 @@ import {
   Download,
   Cloud,
   Loader2,
-} from "lucide-react";
+} from "@/lib/icons";
 
 export type UploadJobStatus =
   | "downloading"

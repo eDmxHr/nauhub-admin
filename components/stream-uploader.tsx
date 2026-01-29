@@ -5,7 +5,7 @@ import * as tus from "tus-js-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Upload, X, CheckCircle2, AlertCircle, File, Play } from "lucide-react";
+import { Upload, X, CheckCircle2, AlertCircle, File, Play } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { useUploadStore } from "@/stores/upload-store";
 import { api } from "@/lib/api-client";

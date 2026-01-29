@@ -4,7 +4,7 @@ import { CustomColumnDef } from "@/types/data-table-columndef";
 import { SupportTicketWithUser } from "@/types";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { formatDate } from "@/lib/utils";
-import { Eye } from "lucide-react";
+import { Eye } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 
 const getStatusVariant = (status: string) => {
@@ -40,18 +40,7 @@ const getPriorityVariant = (priority: string) => {
   }
 };
 
-const getCategoryLabel = (category: string) => {
-  const labels: Record<string, string> = {
-    movie_request: "Movie Request",
-    series_request: "Series Request",
-    technical_issue: "Technical Issue",
-    billing: "Billing",
-    account: "Account",
-    feedback: "Feedback",
-    other: "Other",
-  };
-  return labels[category] || category;
-};
+
 
 export const ticketsColumns: CustomColumnDef<SupportTicketWithUser, any>[] = [
   {
@@ -85,7 +74,7 @@ export const ticketsColumns: CustomColumnDef<SupportTicketWithUser, any>[] = [
       <DataTableColumnHeader column={column} title="Subject" />
     ),
     cell: ({ row }) => (
-      <div className="max-w-[400px] truncate font-medium">{row.original.subject}</div>
+      <div className="max-w-100 truncate font-medium">{row.original.subject}</div>
     ),
     meta: { headerAlign: "left" },
   },

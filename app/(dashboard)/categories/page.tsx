@@ -7,7 +7,7 @@ import { DataTable } from "@/components/table/data-table";
 import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus } from "lucide-react";
+import { Plus } from "@/lib/icons";
 import { Category, Genre } from "@/types";
 import {
   createCategoryColumns,

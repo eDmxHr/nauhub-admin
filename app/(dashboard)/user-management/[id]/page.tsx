@@ -15,7 +15,7 @@ import {
   Phone,
   Mail,
   Calendar,
-  User as UserIcon,
+  UserIcon,
   CreditCard,
   Clock,
   Ban,
@@ -28,7 +28,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 import LoadingState from "@/components/loading-state";
 import { formatDate } from "@/lib/utils";
 

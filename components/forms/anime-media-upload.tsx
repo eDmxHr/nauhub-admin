@@ -19,7 +19,7 @@ import {
   CardContent,
 } from "../ui/card";
 import { Separator } from "../ui/separator";
-import { X } from "lucide-react";
+import { X } from "@/lib/icons";
 
 export interface AnimeMediaUploadFormValues {
   season_number: number;

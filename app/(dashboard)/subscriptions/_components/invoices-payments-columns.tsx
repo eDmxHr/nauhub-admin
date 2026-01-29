@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CustomColumnDef } from "@/types/data-table-columndef";
 import { PaymentWithRelations } from "@/types";
 import { PaymentVerificationForm } from "@/components/forms/payment-verification-form";
-import { Eye } from "lucide-react";
+import { Eye } from "@/lib/icons";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { formatDate } from "@/lib/utils";
 

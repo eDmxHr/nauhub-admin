@@ -10,7 +10,7 @@ import {
   Settings,
   SkipBack,
   SkipForward,
-} from "lucide-react";
+} from "@/lib/icons";
 
 interface VideoPlayerProps {
   videoId?: string;

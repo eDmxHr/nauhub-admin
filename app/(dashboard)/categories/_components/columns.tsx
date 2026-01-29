@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Category, Genre } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/lib/icons";
 
 // Genre columns factory function
 export const createGenreColumns = (

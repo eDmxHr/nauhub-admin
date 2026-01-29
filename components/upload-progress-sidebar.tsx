@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { X, CheckCircle2, AlertCircle, Upload } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, Upload } from "@/lib/icons";
 
 export function UploadProgressSidebar() {
   const { uploads, removeUpload } = useUploadStore();

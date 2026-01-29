@@ -1,4 +1,4 @@
-import { LoaderIcon } from "lucide-react";
+import { LoaderIcon } from "@/lib/icons";
 import React from "react";
 
 export default function LoadingState() {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus } from "@/lib/icons";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import {

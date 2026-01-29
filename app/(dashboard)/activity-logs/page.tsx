@@ -24,7 +24,7 @@ import {
   ColumnFiltersState,
   SortingState,
 } from "@tanstack/react-table";
-import { Trash2, XCircle } from "lucide-react";
+import { Trash2, XCircle } from "@/lib/icons";
 import {
   AlertDialog,
   AlertDialogAction,

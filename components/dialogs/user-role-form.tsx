@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield } from "@/lib/icons";
 
 // Minimal user type for this dialog
 interface UserForRoleForm {

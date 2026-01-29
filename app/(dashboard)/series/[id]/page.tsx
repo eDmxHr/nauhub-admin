@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import SeasonForm from "@/components/forms/season-form";
 import EpisodeForm from "@/components/forms/episode-form";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Plus, Pencil, Trash2, PlayCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, PlayCircle } from "@/lib/icons";
 import LoadingState from "@/components/loading-state";
 import {
   formatBadgeStatusText,

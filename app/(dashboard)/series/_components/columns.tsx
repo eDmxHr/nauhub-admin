@@ -6,7 +6,7 @@ import {
 } from "@/lib/format-badge-status";
 import { Video } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/lib/icons";
 
 export const createSeriesColumns = (
   handleEditSeries: (series: Video) => void,

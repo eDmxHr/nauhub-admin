@@ -238,7 +238,7 @@ export default function AnimeForm({
         {/* Genres */}
         <div className="space-y-2">
           <Label>Genres</Label>
-          <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-10.5">
+          <div className="flex flex-wrap gap-2 p-3 border border-input rounded-md min-h-10.5 bg-transparent">
             {genres.map((genre) => (
               <Badge
                 key={genre.id}
@@ -259,7 +259,7 @@ export default function AnimeForm({
         {/* Categories */}
         <div className="space-y-2">
           <Label>Categories</Label>
-          <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-10.5">
+          <div className="flex flex-wrap gap-2 p-3 border border-input rounded-md min-h-10.5 bg-transparent">
             {categories.map((category) => (
               <Badge
                 key={category.id}

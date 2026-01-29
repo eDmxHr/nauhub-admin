@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Edit2Icon, Trash2Icon, Power, PowerOff } from "lucide-react";
+import { Edit2Icon, Trash2Icon, Power, PowerOff } from "@/lib/icons";
 import {
   Plan,
   usePlans,

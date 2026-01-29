@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, UserIcon } from "lucide-react";
+import { ChevronsUpDown, LogOut, UserIcon } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

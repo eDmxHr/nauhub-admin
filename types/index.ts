@@ -477,3 +477,72 @@ export interface UserDetail extends Omit<User, "password" | "remember_token"> {
   payments: PaymentDetail[];
   watch_history: WatchHistoryItem[];
 }
+
+// ======================================================
+// SUPPORT TICKET TYPES
+// ======================================================
+
+export type TicketCategory =
+  | "movie_request"
+  | "series_request"
+  | "technical_issue"
+  | "billing"
+  | "account"
+  | "feedback"
+  | "other";
+
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
+
+export type TicketStatus =
+  | "open"
+  | "pending"
+  | "awaiting_reply"
+  | "in_progress"
+  | "resolved"
+  | "closed";
+
+export interface SupportTicket {
+  id: number;
+  user_id: number;
+  ticket_number: string;
+  subject: string;
+  description: string;
+  category: TicketCategory;
+  priority: TicketPriority;
+  status: TicketStatus;
+  assigned_to: number | null;
+  resolution_notes: string | null;
+  resolved_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface SupportTicketReply {
+  id: number;
+  ticket_id: number;
+  user_id: number;
+  message: string;
+  is_admin_reply: boolean;
+  is_internal_note: boolean;
+  attachments: string[] | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+  user?: User;
+}
+
+export interface SupportTicketWithUser extends SupportTicket {
+  user: User | null;
+  assignedAdmin?: User | null;
+  replies?: SupportTicketReply[];
+}
+
+export interface SupportTicketStats {
+  total: number;
+  open: number;
+  pending: number;
+  in_progress: number;
+  resolved: number;
+  closed: number;
+  by_category: Record<TicketCategory, number>;
+  by_priority: Record<TicketPriority, number>;
+}

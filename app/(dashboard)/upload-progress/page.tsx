@@ -4,7 +4,7 @@ import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2 } from "@/lib/icons";
 import { formatFileSize } from "@/lib/utils";
 import { useActiveUploadJobs } from "@/hooks/use-upload-jobs";
 import { getUploadJobStatusIcon } from "@/lib/upload-job-status";

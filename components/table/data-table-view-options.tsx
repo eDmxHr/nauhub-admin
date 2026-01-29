@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Columns2, Eye, EyeOff } from "lucide-react";
+import { Columns2, Eye, EyeOff } from "@/lib/icons";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
 interface DataTableViewOptionsProps<TData> {

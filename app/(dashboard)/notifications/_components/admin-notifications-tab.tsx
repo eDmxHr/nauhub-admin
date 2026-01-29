@@ -28,7 +28,7 @@ import {
   Trash2,
   AlertCircle,
   AlertTriangle,
-} from "lucide-react";
+} from "@/lib/icons";
 import {
   AlertDialog,
   AlertDialogAction,

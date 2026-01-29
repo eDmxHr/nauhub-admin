@@ -10,7 +10,7 @@ import {
   useDeleteNotification,
 } from "@/hooks/use-notifications";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
-import { Bell, BellOff, ExternalLink, Trash2 } from "lucide-react";
+import { Bell, BellOff, ExternalLink, Trash2, MoreHorizontal } from "@/lib/icons";
 import { useState } from "react";
 import {
   Sheet,
@@ -26,7 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { cn, extractDateTime } from "@/lib/utils";
 

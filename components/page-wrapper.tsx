@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon } from "@/lib/icons";
 import { Button } from "./ui/button";
 
 export default function PageWrapper({

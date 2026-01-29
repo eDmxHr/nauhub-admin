@@ -28,7 +28,7 @@ import {
   XCircle,
   Eye,
   EyeOff,
-} from "lucide-react";
+} from "@/lib/icons";
 import LoadingState from "@/components/loading-state";
 import { formatBadgeStatusVariant } from "@/lib/format-badge-status";
 

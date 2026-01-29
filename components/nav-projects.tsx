@@ -6,7 +6,7 @@ import {
   MoreHorizontal,
   Trash2,
   type LucideIcon,
-} from "lucide-react"
+} from "@/lib/icons"
 
 import {
   DropdownMenu,

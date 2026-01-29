@@ -1,6 +1,6 @@
 import { Table } from "@tanstack/react-table";
 import { Button } from "../ui/button";
-import { X } from "lucide-react";
+import { X } from "@/lib/icons";
 
 export default function BulkActions({
   table,
@@ -24,7 +24,7 @@ export default function BulkActions({
             </div>
 
             <div className="flex items-center">
-              <div className="flex items-center space-x-2 flex-shrink-0 border-r pr-4">
+              <div className="flex items-center space-x-2 shrink-0 border-r pr-4">
                 {actions}
               </div>
               <div className="flex items-center gap-2 pl-4">

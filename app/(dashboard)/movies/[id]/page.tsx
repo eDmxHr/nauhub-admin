@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import PageHeader from "@/components/page-header";
 import PageWrapper from "@/components/page-wrapper";
 import { Badge } from "@/components/ui/badge";
-import { Star, FileVideo } from "lucide-react";
+import { Star, FileVideo } from "@/lib/icons";
 import Image from "next/image";
 import { truncate } from "@/lib/utils";
 import { useVideo } from "@/hooks/use-videos";
