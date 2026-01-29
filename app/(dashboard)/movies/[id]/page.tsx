@@ -161,13 +161,40 @@ export default function Page() {
         {/* Files Section */}
         <div className="mt-16">
           <h2 className="text-2xl font-semibold mb-6">Media Files</h2>
-          <div className="border border-dashed border-border rounded-lg p-8 text-center">
-            <FileVideo className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">
-              No media files uploaded yet. Use the &quot;Upload file&quot;
-              button to add media files to this movie.
-            </p>
-          </div>
+          {movie.cloudflare_video_uid ? (
+            <div className="border rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-md bg-muted">
+                  <FileVideo className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium">Video File</h4>
+                    <Badge variant="default" className="text-xs">
+                      Uploaded
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Cloudflare Stream Video
+                  </p>
+                  <div className="bg-muted/50 rounded px-3 py-2">
+                    <p className="text-xs text-muted-foreground mb-1">Video UID</p>
+                    <code className="text-xs font-mono break-all">
+                      {movie.cloudflare_video_uid}
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border border-dashed border-border rounded-lg p-8 text-center">
+              <FileVideo className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">
+                No media files uploaded yet. Use the &quot;Upload file&quot;
+                button to add media files to this movie.
+              </p>
+            </div>
+          )}
         </div>
       </PageWrapper>
     </>

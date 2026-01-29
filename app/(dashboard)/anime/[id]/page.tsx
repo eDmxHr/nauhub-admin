@@ -418,7 +418,7 @@ export default function AnimeDetailPage() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         {episode.description}
                                       </p>
-                                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                                      <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
                                         {episode.duration && (
                                           <span>{episode.duration} min</span>
                                         )}
@@ -428,6 +428,11 @@ export default function AnimeDetailPage() {
                                         {episode.view_count !== undefined && (
                                           <span>
                                             {episode.view_count} views
+                                          </span>
+                                        )}
+                                        {episode.cloudflare_video_uid && (
+                                          <span className="text-primary font-medium">
+                                            Video: {episode.cloudflare_video_uid.slice(0, 8)}...
                                           </span>
                                         )}
                                       </div>

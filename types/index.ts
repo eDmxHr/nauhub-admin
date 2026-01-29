@@ -105,6 +105,7 @@ export type Video = {
   thumbnail?: string;
   banner?: string;
   magnet_url?: string;
+  cloudflare_video_uid?: string;
   release_year?: number;
   status?: string;
   duration?: number;
